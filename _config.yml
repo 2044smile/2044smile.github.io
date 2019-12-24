@@ -2,8 +2,8 @@
 
 # Website settings
 title: 2044smile
-description: 2044smile's blog,use Jekyll and github pages.
-keywords: 2044smile,Jalpc,blog,Jekyll,github,gh-pages
+description: 2044smile's blog
+keywords: 2044smile,blog,github,gh-pages
 baseurl: / # if you have suburl as homepage like '/homepage', please change it to '/homepage' and your repo's name should be 'homepage'
 url: https://2044smile.github.io/  # url should be 'http://<github_username>.github.io/homepage' as before
 # url: http://127.0.0.1:4000
@@ -16,7 +16,6 @@ author:  # change following line to your infomation.
   last_name: Changseok  # Be used at index page about me section.
   avatar: /static/assets/img/landing/avatar.jpg  # upload your avatar at directory and edit it.
   github_username: 2044smile  # Leave blank if you don't have now
-  linkedin_id: 2044smile # Leave blank if you don't have now
   email: 2044smile@naver.com  # Leave blank if you don't have now
   # skill icons are on avatar's left and right side. Reference urls are http://fontawesome.io/ and http://fizzed.com/oss/font-mfizz
   skill_icon1:
