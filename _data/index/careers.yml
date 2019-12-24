@@ -4,11 +4,10 @@
     detail: Congtube
     i18n: company_a
   desc:
-    language: Skill - Python, HTML, CSS
-    framework: Framework - Django
-    skill: Tools - Git, Slack, Sentry, CircleCI, Codecov, IAMPORT, NHN Toast, postman
-    server: Server - AWS EC2, ECR, Docker, Nginx
-    db: DB - Postgresql
+    language: Skill- Python, HTML, CSS, Django
+    skill: Tools- Git, Slack, Sentry, CircleCI, Codecov, IAMPORT, Toast, postman
+    server: Server- AWS Elastic Beanstalk, Docker, Nginx
+    db: DB- Postgresql
     i18n: company_a_desc
   date:
     detail: November. 2019
