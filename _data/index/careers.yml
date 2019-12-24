@@ -6,14 +6,13 @@
   desc:
     language: Skill- Python, HTML, CSS, Django
     skill: Tools- Git, Slack, Sentry, CircleCI, Codecov, IAMPORT, Toast, postman
-    server: Server- AWS Elastic Beanstalk, Docker, Nginx
-    db: DB- Postgresql
+    server: Server- AWS Elastic Beanstalk, Docker, Nginx, Postgresql
     i18n: company_a_desc
   date:
     detail: November. 2019
     i18n: company_a_date
   job:
-    detail: Backend Develop
+    detail: Backend Developer
     i18n: company_a_job
   icon: fa-plus-square
   present: true
