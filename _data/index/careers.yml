@@ -4,11 +4,11 @@
     detail: Congtube
     i18n: company_a
   desc:
-    language: 사용 언어 Python, HTML, CSS
-    framework: 사용 프레임워크 Django
-    skill: Git, Slack, Sentry, CircleCI, Codecov, IAMPORT, NHN Toast, postman
-    server: AWS EC2, ECR, Docker, Nginx
-    db: Postgresql
+    language: Skill - Python, HTML, CSS
+    framework: Framework - Django
+    skill: Tools - Git, Slack, Sentry, CircleCI, Codecov, IAMPORT, NHN Toast, postman
+    server: Server - AWS EC2, ECR, Docker, Nginx
+    db: DB - Postgresql
     i18n: company_a_desc
   date:
     detail: November. 2019
