@@ -14,9 +14,3 @@
   repo: DevelUP-quest1
   img: /static/assets/img/landing/python.png
   desc: 본인의 동네와 관련된 서비스를 만들자! Introduce Songchu
-
-- name: Tistory Blog
-  i18n: google
-  url: https://newbiecs.tistory.com/
-  img: /static/assets/img/landing/google.png
-  desc: 운영중인 티스토리 블로그입니다.
