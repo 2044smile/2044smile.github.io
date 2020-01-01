@@ -1,6 +1,7 @@
 # projects section data
 # If you don't have language feature(language.yml is empty), ignore "i18n" items
 # Suggest projects' img be located at '/static/assets/img/landing', and edit following img items.
+<<<<<<< HEAD
 - name: My neighborhood
   i18n: introduce
   gh_user: 2044smile
@@ -20,3 +21,18 @@
   url: https://google.com
   img: /static/assets/img/landing/google.png
   desc: This is another project.
+=======
+- name: Trend
+  i18n: jalpc
+  gh_user: 2044smile
+  repo: Trend
+  img: /static/assets/img/landing/trend.png
+  desc: 포털사이트(Naver, Daum, Google)의 인기검색어를 모아서 보여주는 사이트
+
+- name: Neighborhood Introduction
+  i18n: cpython
+  gh_user: 2044smile
+  repo: DevelUP-quest1
+  img: /static/assets/img/landing/songchu.png
+  desc: 본인의 동네와 관련된 서비스를 만들자! Introduce Songchu
+>>>>>>> 2521c41c5bce714bb2fdb51155c3dceebbc3ac49
