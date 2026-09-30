@@ -96,7 +96,8 @@
     .activity .name { font-size: 15px; font-weight: 500; }
     .activity .period { font-size: 12px; color: var(--faint); }
     .activity .desc { font-size: 14px; color: var(--muted); margin-top: 4px; }
-    .activity .desc strong { color: var(--text-soft); font-weight: 500; }
+    .activity .desc strong, .project .desc strong { color: var(--text-soft); font-weight: 500; }
+    .desc .mono { font-size: 13px; }
     .activity.featured { margin-bottom: 28px; }
     .activity.featured img { width: 236px; height: auto; background: none; padding: 0; }
     .activity.featured .name { font-family: 'IBM Plex Mono', monospace; }
@@ -214,13 +215,17 @@
         <div class="head">
           <a class="name" href="https://github.com/2044smile/daum-cafe-mp4-crawler">daum-cafe-mp4-crawler</a>
         </div>
-        <div class="desc">카페 게시판을 크롤링해 동영상 게시글만 골라 480p MP4를 자동 다운로드하는 크롤러 — Python, Selenium</div>
+        <div class="desc">카카오 계정으로 로그인해 다음 카페 게시판 전체를 페이지네이션으로 순회하고, 동영상이 있는 게시글만 골라 480p MP4를 자동 다운로드 — Python · Selenium Wire · webdriver-manager</div>
+        <div class="desc"><strong>네트워크 캡처로 스트림 주소 추출</strong> — 영상 URL이 DOM에 없어, Selenium Wire 프록시로 <span class="mono">kamp.daum.net</span> 응답(gzip)을 가로채 streams에서 <span class="mono">name=480p · protocol=mp4</span>를 매칭. JSON 파싱이 실패하면 정규식으로 폴백</div>
+        <div class="desc"><strong>구조</strong> — 단일 스크립트를 browser · auth · scraper · analyzer · downloader 5개 모듈로 리팩터링. 카페마다 다른 HTML 구조에 맞춰 게시판 iframe을 자동 탐지하고 선택자를 순차 시도</div>
       </div>
       <div class="project">
         <div class="head">
           <a class="name" href="https://github.com/2044smile/shipment">shipment</a>
         </div>
-        <div class="desc">카카오 로그인(JWT)과 주문·배송 API를 갖춘 배송 서비스, RabbitMQ + Celery 비동기 배송 처리 — Python, Django, DRF</div>
+        <div class="desc">카카오 로그인부터 주문·배송까지 accounts · items · orders · deliveries 4개 도메인을 DRF ViewSet으로 구현한 배송 서비스 — Django 4.2 · DRF · SimpleJWT · drf-yasg(Swagger)</div>
+        <div class="desc"><strong>비동기 배송 처리</strong> — 배송 출발 API가 Celery 태스크를 <span class="mono">countdown=60</span>으로 지연 예약하고, RabbitMQ 브로커를 거쳐 60초 뒤 상태가 접수 → 출발 → 도착으로 자동 전이. docker-compose로 django · rabbitmq · celery 3개 컨테이너 구성</div>
+        <div class="desc">카카오 토큰을 서비스 자체 JWT(access/refresh)로 교환하는 인증 흐름, <span class="mono">GET /health/</span> 헬스체크 미들웨어 · <a href="https://newbiecs.tistory.com/427">구현 기록 →</a></div>
       </div>
       <div class="project">
         <div class="head">
