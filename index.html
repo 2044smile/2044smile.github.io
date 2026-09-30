@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>이창석 — Backend · DevOps · Vision AI Engineer</title>
+  <meta name="description" content="Python과 Django로 백엔드를 설계하고, AWS · Kubernetes 위에서 운영하며, Vision AI 파이프라인을 구축하는 개발자 이창석의 포트폴리오">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d;
+      --border: #262c38;
+      --text: #edebe3;
+      --text-soft: #c9c7be;
+      --muted: #a3a8b0;
+      --faint: #737a84;
+      --accent: #4fd1c0;
+      --blue: #9db8f0;
+      --amber: #f0c176;
+      --green: #7ee0b0;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Sans KR', sans-serif;
+      line-height: 1.8;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: #8ce3d6; text-decoration: underline; }
+    .mono { font-family: 'IBM Plex Mono', monospace; }
+    h1, h2 { font-family: 'Sora', 'Noto Sans KR', sans-serif; margin: 0; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+
+    header .wrap {
+      padding-top: 28px; padding-bottom: 28px;
+      display: flex; align-items: center; justify-content: flex-end;
+    }
+    header nav { display: flex; gap: 24px; font-size: 14px; }
+    header nav a { color: var(--muted); }
+    header nav a:hover { color: var(--text); text-decoration: none; }
+
+    .hero {
+      padding: 56px 0;
+      display: flex; gap: 40px; align-items: flex-start;
+    }
+    .hero h1 { font-size: 36px; line-height: 1.25; }
+    .hero .role { font-size: 14px; color: var(--accent); margin-top: 10px; }
+    .hero p { margin: 14px 0 0; font-size: 16px; color: var(--text-soft); }
+    .hero .links { font-size: 14px; color: var(--muted); margin-top: 10px; }
+    .hero img {
+      width: 148px; height: 148px; border-radius: 14px;
+      object-fit: cover; flex-shrink: 0;
+    }
+
+    section { border-top: 1px solid var(--border); padding: 40px 0; }
+    section h2 { font-size: 22px; margin-bottom: 20px; }
+    .section-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 20px; }
+    .section-head h2 { margin-bottom: 0; }
+    .section-head .more { font-size: 13px; color: var(--muted); }
+
+    .skills { display: flex; flex-direction: column; gap: 12px; font-size: 15px; }
+    .skills .row { display: flex; gap: 20px; }
+    .skills .label {
+      flex-shrink: 0; width: 110px; padding-top: 3px;
+      font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint);
+    }
+    .skills .items { color: var(--text-soft); }
+
+    .certs { display: flex; flex-direction: column; gap: 14px; }
+    .certs .empty { margin: 0; font-size: 14px; color: var(--faint); }
+    .cert { display: flex; gap: 20px; align-items: baseline; }
+    .cert .name { font-size: 15px; color: var(--text-soft); }
+    .cert .meta {
+      margin-left: auto; flex-shrink: 0; text-align: right;
+      font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--faint);
+    }
+
+    .plist { display: flex; flex-direction: column; gap: 22px; }
+    .project .head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+    .project .name { font-family: 'IBM Plex Mono', monospace; font-size: 15px; }
+    .project .desc { font-size: 14px; color: var(--muted); margin-top: 4px; }
+
+    .alist { display: flex; flex-direction: column; gap: 28px; }
+    .activity { display: flex; gap: 24px; align-items: flex-start; }
+    .activity img {
+      width: 220px; height: 126px; object-fit: cover; object-position: top;
+      border-radius: 10px; border: 1px solid var(--border); flex-shrink: 0;
+      background: #fff;
+    }
+    .activity .head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+    .activity .name { font-size: 15px; font-weight: 500; }
+    .activity .period { font-size: 12px; color: var(--faint); }
+    .activity .desc { font-size: 14px; color: var(--muted); margin-top: 4px; }
+    .activity .desc strong { color: var(--text-soft); font-weight: 500; }
+    .activity.featured { margin-bottom: 28px; }
+    .activity.featured img { width: 236px; height: auto; background: none; padding: 0; }
+    .activity.featured .name { font-family: 'IBM Plex Mono', monospace; }
+
+    .tabs {
+      display: flex; gap: 22px; font-size: 14px;
+      border-bottom: 1px solid var(--border); margin-bottom: 18px;
+    }
+    .tab {
+      background: none; border: none; padding: 0 0 10px; cursor: pointer;
+      font-family: inherit; font-size: 14px; color: var(--muted);
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--accent); font-weight: 700; border-bottom-color: var(--accent); }
+
+    .posts { display: flex; flex-direction: column; gap: 14px; }
+    .post { display: flex; gap: 18px; align-items: baseline; color: var(--text); }
+    .post:hover { color: var(--text); }
+    .post:hover .title { text-decoration: underline; }
+    .post .cat {
+      flex-shrink: 0; width: 80px;
+      font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    }
+    .cat-ai { color: var(--accent); }
+    .cat-devops { color: var(--blue); }
+    .cat-lang { color: var(--amber); }
+    .post .title { font-size: 15px; }
+    .post[hidden] { display: none; }
+
+    footer { border-top: 1px solid var(--border); }
+    footer .wrap { padding-top: 32px; padding-bottom: 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+
+    @media (max-width: 640px) {
+      .hero { flex-direction: column-reverse; padding: 36px 0 32px; }
+      .hero h1 { font-size: 28px; }
+      .hero p { font-size: 14px; }
+      .hero img { width: 110px; height: 110px; }
+      .skills .row { flex-direction: column; gap: 2px; }
+      .skills .label { width: auto; padding-top: 0; }
+      .cert { flex-direction: column; gap: 2px; }
+      .cert .meta { margin-left: 0; text-align: left; }
+      header nav .hide-sm { display: none; }
+      .post { flex-direction: column; gap: 2px; }
+      .post .cat { width: auto; font-size: 11px; }
+      .activity { flex-direction: column; }
+      .activity img { width: 100%; height: 160px; }
+      .activity.featured img { width: 100%; max-width: 320px; height: auto; align-self: center; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <nav>
+      <a href="#about" class="hide-sm">소개</a>
+      <a href="#projects">프로젝트</a>
+      <a href="#community" class="hide-sm">활동</a>
+      <a href="#notes">기록</a>
+      <a href="https://github.com/2044smile">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="hero" id="about">
+    <div>
+      <h1>이창석</h1>
+      <div class="role mono">Backend · DevOps · Vision AI</div>
+      <p>Python과 Django로 견고한 백엔드를 설계하고, AWS · Kubernetes · Argo Workflow · Helm 위에서 운영합니다. Vision AI 파이프라인(DeepStream · ONVIF · CUDA)을 구축하며, PoC와 BMT를 통해 기술 검증을 주도합니다.</p>
+      <div class="links"><a href="https://github.com/2044smile">GitHub</a> · <a href="https://newbiecs.tistory.com/">기술 블로그</a> · <span class="mono" style="font-size: 13px;">2044smile@naver.com</span></div>
+    </div>
+    <img src="https://avatars.githubusercontent.com/u/47213853?v=4" alt="이창석 프로필 사진">
+  </div>
+
+  <section id="skills">
+    <h2>전문 분야</h2>
+    <div class="skills">
+      <div class="row"><span class="label">BACKEND</span><span class="items">Python · Django · DRF · PostgreSQL</span></div>
+      <div class="row"><span class="label">DEVOPS</span><span class="items">AWS · Kubernetes · Argo Workflow · Helm · Docker</span></div>
+      <div class="row"><span class="label">VISION AI</span><span class="items">DeepStream · GStreamer · CUDA · ONVIF · YOLOv8</span></div>
+    </div>
+  </section>
+
+  <section id="certs">
+    <h2>자격증</h2>
+    <div class="certs">
+      <!-- 자격증 추가: 아래 주석을 풀고 이름 · 발급기관 · 취득연월을 채우세요. 최신 취득 순으로 정렬.
+      <div class="cert">
+        <span class="name">자격증 이름</span>
+        <span class="meta">발급기관 · 2021.06</span>
+      </div>
+      -->
+      <p class="empty">등록된 자격증이 없습니다.</p>
+    </div>
+  </section>
+
+  <section id="projects">
+    <h2>주요 프로젝트</h2>
+
+    <div class="activity featured">
+      <img src="/assets/img/stepth.png" alt="STEPTH 앱 스플래시와 홈 화면">
+      <div>
+        <div class="head">
+          <span class="name">STEPTH</span>
+        </div>
+        <div class="desc">목표를 입력하면 AI가 추가 질문으로 맥락을 파악하고 맞춤 실행 플랜을 만들어주는 모바일 서비스. 테스터 대상 비공개 배포 중.</div>
+        <div class="desc"><strong>Backend 전반</strong> — FastAPI · Firebase 인증(카카오/네이버) · FCM 푸시 · GCP(Cloud Run · Scheduler · Tasks) 알림 스케줄링</div>
+        <div class="desc"><strong>Gemini LLM 파이프라인</strong> — 구조화 출력 + temperature 0으로 결정론적 응답 보장, Context Caching으로 토큰 비용·지연 절감, 호출별 토큰·비용 계측, 프롬프트 스펙 v7까지 반복 개선</div>
+      </div>
+    </div>
+
+    <div class="activity featured">
+      <img src="/assets/img/mmca.png" alt="mmca-ticket-alert가 잔여석을 감지하고 텔레그램으로 알림을 보낸 화면">
+      <div>
+        <div class="head">
+          <a class="name" href="https://github.com/2044smile/mmca-ticket-alert">mmca-ticket-alert</a>
+        </div>
+        <div class="desc">국립현대미술관(MMCA) 예매 사이트의 잔여석을 주기적으로 확인하다가, 자리가 나면 텔레그램으로 즉시 알려주는 봇 — Python · Telegram Bot API</div>
+        <div class="desc">잔여석 감지 → 텔레그램 알림 → 매진이던 데이미언 허스트전 예매 성공까지 실전 검증 완료</div>
+      </div>
+    </div>
+
+    <div class="plist">
+      <div class="project">
+        <div class="head">
+          <a class="name" href="https://github.com/2044smile/daum-cafe-mp4-crawler">daum-cafe-mp4-crawler</a>
+        </div>
+        <div class="desc">카페 게시판을 크롤링해 동영상 게시글만 골라 480p MP4를 자동 다운로드하는 크롤러 — Python, Selenium</div>
+      </div>
+      <div class="project">
+        <div class="head">
+          <a class="name" href="https://github.com/2044smile/shipment">shipment</a>
+        </div>
+        <div class="desc">카카오 로그인(JWT)과 주문·배송 API를 갖춘 배송 서비스, RabbitMQ + Celery 비동기 배송 처리 — Python, Django, DRF</div>
+      </div>
+      <div class="project">
+        <div class="head">
+          <a class="name" href="https://github.com/2044smile/korail-notifier">korail-notifier</a>
+        </div>
+        <div class="desc">코레일 승차권 예매 가능 여부를 감시하고 알려주는 노티파이어 — Python, Scheduler</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="community">
+    <h2>커뮤니티 활동</h2>
+    <div class="alist">
+      <div class="activity">
+        <img src="/assets/img/prography.png" alt="프로그라피 8기 2팀 MOMOKJI 서비스 커버">
+        <div>
+          <div class="head">
+            <a class="name" href="https://prography.org/">프로그라피 8기 — Backend</a>
+            <span class="period mono">2023.04 – 2023.09</span>
+          </div>
+          <div class="desc">IT 사이드 프로젝트 동아리. 8기 2팀 백엔드로 참여해, 냉장고 속 재료만으로 만들 수 있는 레시피를 추천하는 <strong>MOMOKJI(모먹지)</strong> 서비스를 개발하고 실서비스로 배포 — Django · DRF · Swagger</div>
+          <div class="desc"><a href="https://newbiecs.tistory.com/393">활동 회고 →</a></div>
+        </div>
+      </div>
+      <div class="activity">
+        <img src="/assets/img/geultto.png" alt="글또 활동 기간 블로그 월간 방문자 성장 그래프">
+        <div>
+          <div class="head">
+            <a class="name" href="https://geultto.github.io/">글또 5기</a>
+            <span class="period mono">2020.11 – 2021.05</span>
+          </div>
+          <div class="desc">개발자 글쓰기 커뮤니티. 격주로 기술 글을 쓰며 Argo Workflow · Kubernetes 모니터링 · CI/CD 등을 기록했고, 활동 기간 블로그 월간 방문자가 <strong>4,000명+</strong>까지 성장</div>
+          <div class="desc"><a href="https://newbiecs.tistory.com/321">시작 회고 →</a> · <a href="https://newbiecs.tistory.com/333">마무리 회고 →</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="notes">
+    <div class="section-head">
+      <h2>탐구와 기록</h2>
+      <a class="more" href="https://newbiecs.tistory.com/">전체 보기 →</a>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-cat="all">전체</button>
+      <button class="tab" data-cat="ai">AI · Vision</button>
+      <button class="tab" data-cat="devops">DevOps</button>
+      <button class="tab" data-cat="lang">Language</button>
+    </div>
+
+    <div class="posts">
+      <a class="post" data-cat="ai" href="https://newbiecs.tistory.com/442">
+        <span class="cat cat-ai">AI</span>
+        <span class="title">Ubuntu 24.04 + DeepStream 9.0 개발 환경 구축기 (Docker 기반) with YOLOv8</span>
+      </a>
+      <a class="post" data-cat="ai" href="https://newbiecs.tistory.com/441">
+        <span class="cat cat-ai">AI</span>
+        <span class="title">ONVIF XML과 SOAP에 대해서 알아보고 REST API와 비교</span>
+      </a>
+      <a class="post" data-cat="ai" href="https://newbiecs.tistory.com/440">
+        <span class="cat cat-ai">AI</span>
+        <span class="title">ONVIF로 IP 카메라 설정 제어</span>
+      </a>
+      <a class="post" data-cat="ai" href="https://newbiecs.tistory.com/435">
+        <span class="cat cat-ai">AI</span>
+        <span class="title">CUDA란?</span>
+      </a>
+      <a class="post" data-cat="ai" href="https://newbiecs.tistory.com/434">
+        <span class="cat cat-ai">AI</span>
+        <span class="title">DeepStream이란? with Gstreamer</span>
+      </a>
+      <a class="post" data-cat="devops" href="https://newbiecs.tistory.com/443">
+        <span class="cat cat-devops">DevOps</span>
+        <span class="title">Ubuntu 서버 미사용 디스크를 /data 로 마운트하기 (LVM 구성)</span>
+      </a>
+      <a class="post" data-cat="devops" href="https://newbiecs.tistory.com/437">
+        <span class="cat cat-devops">DevOps</span>
+        <span class="title">많은 서버를 한 번에 제어하는 방법 (tmux + Bash 스크립트)</span>
+      </a>
+      <a class="post" data-cat="devops" href="https://newbiecs.tistory.com/433">
+        <span class="cat cat-devops">DevOps</span>
+        <span class="title">Elemental MediaConvert 사용기 with FastAPI, S3 Presigned URL</span>
+      </a>
+      <a class="post" data-cat="devops" href="https://newbiecs.tistory.com/432">
+        <span class="cat cat-devops">DevOps</span>
+        <span class="title">앤서블(Ansible) 이란?</span>
+      </a>
+      <a class="post" data-cat="lang" href="https://newbiecs.tistory.com/439">
+        <span class="cat cat-lang">Lang</span>
+        <span class="title">[C++] 전역 변수, 정적 변수, 내부 연결, 외부 연결</span>
+      </a>
+      <a class="post" data-cat="lang" href="https://newbiecs.tistory.com/436">
+        <span class="cat cat-lang">Lang</span>
+        <span class="title">[Python] Iterator, Generator 정리</span>
+      </a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    © 2026 Lee Changseok · <a href="https://github.com/2044smile">GitHub</a> · <a href="https://newbiecs.tistory.com/">Blog</a> · <span class="mono">2044smile@naver.com</span>
+  </div>
+</footer>
+
+<script>
+  const tabs = document.querySelectorAll('.tab');
+  const posts = document.querySelectorAll('.post');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const cat = tab.dataset.cat;
+      posts.forEach(p => { p.hidden = cat !== 'all' && p.dataset.cat !== cat; });
+    });
+  });
+</script>
+
+</body>
+</html>

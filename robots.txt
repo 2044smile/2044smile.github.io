@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://2044smile.github.io/sitemap.xml
