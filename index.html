@@ -63,10 +63,9 @@
     .section-head h2 { margin-bottom: 0; }
     .section-head .more { font-size: 13px; color: var(--muted); }
 
-    .skills { display: flex; flex-direction: column; gap: 12px; font-size: 15px; }
-    .skills .row { display: flex; gap: 20px; }
+    .skills { display: flex; flex-direction: column; gap: 18px; font-size: 15px; text-align: center; }
+    .skills .row { display: flex; flex-direction: column; gap: 4px; align-items: center; }
     .skills .label {
-      flex-shrink: 0; width: 110px; padding-top: 3px;
       font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint);
     }
     .skills .items { color: var(--text-soft); }
@@ -137,8 +136,6 @@
       .hero h1 { font-size: 28px; }
       .hero p { font-size: 14px; }
       .hero img { width: 110px; height: 110px; }
-      .skills .row { flex-direction: column; gap: 2px; }
-      .skills .label { width: auto; padding-top: 0; }
       .cert { flex-direction: column; gap: 2px; }
       .cert .meta { margin-left: 0; text-align: left; }
       header nav .hide-sm { display: none; }
@@ -176,7 +173,7 @@
   </div>
 
   <section id="skills">
-    <h2>전문 분야</h2>
+    <h2>Skills</h2>
     <div class="skills">
       <div class="row"><span class="label">BACKEND</span><span class="items">Python · Django · DRF · PostgreSQL</span></div>
       <div class="row"><span class="label">DEVOPS</span><span class="items">AWS · Kubernetes · Argo Workflow · Helm · Docker</span></div>
