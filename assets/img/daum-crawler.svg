@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 560" width="420" height="560" role="img" aria-label="daum-cafe-mp4-crawler 동작 흐름: 카카오 로그인, 게시판 iframe 진입, 게시글 수집, kamp.daum.net 네트워크 캡처로 480p mp4 스트림 확보, 다운로드">
+  <defs>
+    <style>
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .sans { font-family: 'Noto Sans KR', system-ui, -apple-system, sans-serif; }
+    </style>
+  </defs>
+
+  <rect width="420" height="560" rx="11" fill="#11141a"/>
+
+  <!-- title bar -->
+  <circle cx="22" cy="24" r="4.5" fill="#3a4150"/>
+  <circle cx="38" cy="24" r="4.5" fill="#3a4150"/>
+  <circle cx="54" cy="24" r="4.5" fill="#3a4150"/>
+  <text class="mono" x="210" y="28" font-size="13" fill="#a3a8b0" text-anchor="middle">main.py</text>
+  <line x1="1" y1="48" x2="419" y2="48" stroke="#262c38"/>
+
+  <!-- step 1 -->
+  <text class="mono" x="26" y="88" font-size="13" fill="#737a84">01</text>
+  <text class="sans" x="54" y="88" font-size="16" fill="#c9c7be">카카오 로그인</text>
+  <text class="mono" x="394" y="88" font-size="14" fill="#7ee0b0" text-anchor="end">✓</text>
+
+  <!-- step 2 -->
+  <text class="mono" x="26" y="126" font-size="13" fill="#737a84">02</text>
+  <text class="sans" x="54" y="126" font-size="16" fill="#c9c7be">게시판 iframe 진입</text>
+  <text class="mono" x="394" y="126" font-size="14" fill="#7ee0b0" text-anchor="end">✓</text>
+
+  <!-- step 3 -->
+  <text class="mono" x="26" y="164" font-size="13" fill="#737a84">03</text>
+  <text class="sans" x="54" y="164" font-size="16" fill="#c9c7be">페이지 순회 · 게시글 수집</text>
+  <text class="mono" x="394" y="164" font-size="14" fill="#7ee0b0" text-anchor="end">✓</text>
+
+  <!-- step 4 -->
+  <text class="mono" x="26" y="206" font-size="13" fill="#737a84">04</text>
+  <text class="sans" x="54" y="206" font-size="16" fill="#edebe3">네트워크 캡처</text>
+
+  <rect x="54" y="222" width="340" height="132" rx="8" fill="#161a23" stroke="#262c38"/>
+  <text class="mono" x="70" y="246" font-size="12.5" fill="#737a84">GET kamp.daum.net</text>
+  <text class="mono" x="70" y="270" font-size="12.5" fill="#9db8f0">streams[ ]</text>
+  <text class="mono" x="70" y="296" font-size="12.5" fill="#4fd1c0">name = '480p'</text>
+  <text class="mono" x="70" y="318" font-size="12.5" fill="#4fd1c0">protocol = 'mp4'</text>
+  <line x1="70" y1="330" x2="378" y2="330" stroke="#262c38"/>
+  <text class="sans" x="70" y="346" font-size="13" fill="#c9c7be">스트림 주소 확보</text>
+
+  <!-- step 5 -->
+  <text class="mono" x="26" y="394" font-size="13" fill="#737a84">05</text>
+  <text class="sans" x="54" y="394" font-size="16" fill="#edebe3">480p MP4 다운로드</text>
+
+  <rect x="54" y="412" width="340" height="9" rx="4.5" fill="#1d2230"/>
+  <rect x="54" y="412" width="233" height="9" rx="4.5" fill="#4fd1c0"/>
+  <text class="mono" x="54" y="444" font-size="12.5" fill="#a3a8b0">Progress: 68.4%</text>
+  <text class="mono" x="394" y="444" font-size="12.5" fill="#a3a8b0" text-anchor="end">192.8 MB</text>
+
+  <line x1="1" y1="478" x2="419" y2="478" stroke="#262c38"/>
+  <text class="sans" x="210" y="504" font-size="12" fill="#737a84" text-anchor="middle">실제 실행 로그의 흐름을 재현한 도식입니다.</text>
+  <text class="sans" x="210" y="524" font-size="12" fill="#737a84" text-anchor="middle">계정 · 카페 · 게시글 정보는 포함하지 않습니다.</text>
+</svg>

@@ -210,8 +210,9 @@
       </div>
     </div>
 
-    <div class="plist">
-      <div class="project">
+    <div class="activity featured">
+      <img src="/assets/img/daum-crawler.svg" alt="daum-cafe-mp4-crawler 동작 흐름 도식 — 카카오 로그인, 게시판 iframe 진입, 게시글 수집, kamp.daum.net 응답에서 480p mp4 스트림 확보, 다운로드 진행률">
+      <div>
         <div class="head">
           <a class="name" href="https://github.com/2044smile/daum-cafe-mp4-crawler">daum-cafe-mp4-crawler</a>
         </div>
@@ -219,6 +220,9 @@
         <div class="desc"><strong>네트워크 캡처로 스트림 주소 추출</strong> — 영상 URL이 DOM에 없어, Selenium Wire 프록시로 <span class="mono">kamp.daum.net</span> 응답(gzip)을 가로채 streams에서 <span class="mono">name=480p · protocol=mp4</span>를 매칭. JSON 파싱이 실패하면 정규식으로 폴백</div>
         <div class="desc"><strong>구조</strong> — 단일 스크립트를 browser · auth · scraper · analyzer · downloader 5개 모듈로 리팩터링. 카페마다 다른 HTML 구조에 맞춰 게시판 iframe을 자동 탐지하고 선택자를 순차 시도</div>
       </div>
+    </div>
+
+    <div class="plist">
       <div class="project">
         <div class="head">
           <a class="name" href="https://github.com/2044smile/shipment">shipment</a>
