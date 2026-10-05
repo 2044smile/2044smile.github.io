@@ -238,11 +238,16 @@
         <div class="desc"><strong>비동기 배송 처리</strong> — 배송 출발 API가 Celery 태스크를 <span class="mono">countdown=60</span>으로 지연 예약하고, RabbitMQ 브로커를 거쳐 60초 뒤 상태가 접수 → 출발 → 도착으로 자동 전이. docker-compose로 django · rabbitmq · celery 3개 컨테이너 구성</div>
         <div class="desc">카카오 토큰을 서비스 자체 JWT(access/refresh)로 교환하는 인증 흐름, <span class="mono">GET /health/</span> 헬스체크 미들웨어 · <a href="https://newbiecs.tistory.com/427">구현 기록 →</a></div>
       </div>
-      <div class="project">
+    </div>
+
+    <div class="activity featured" style="margin-top: 28px; margin-bottom: 0;">
+      <img src="/assets/img/korail.png" alt="korail-notifier의 seat_notifier 스크립트와 빈자리 발견 감시 로그">
+      <div>
         <div class="head">
           <a class="name" href="https://github.com/2044smile/korail-notifier">korail-notifier</a>
         </div>
-        <div class="desc">TAGO 공공데이터 열차정보에 korail2 실시간 좌석 상태를 결합해 보여주는 좌석 감시 웹 서비스. 순수 좌석/입석+좌석 조건 알림과 자동예약 모드를 지원하고, 빈자리가 나면 텔레그램으로 즉시 알림 — Python · FastAPI · PostgreSQL · Docker</div>
+        <div class="desc">TAGO 공공데이터 열차정보에 korail2 실시간 좌석 상태를 결합해 보여주는 좌석 감시 웹 서비스. 순수 좌석/입석+좌석 조건 알림과 자동예약 모드 지원 — Python · FastAPI · PostgreSQL · Docker</div>
+        <div class="desc">korail2 라이브러리를 포크해 좌석 감시 CLI를 추가 — 30초 간격으로 재조회하다가 빈자리가 나면 텔레그램으로 즉시 알림, 매진이던 KTX 좌석 확보까지 실전 검증 완료</div>
       </div>
     </div>
   </section>
