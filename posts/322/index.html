@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>따라하면서 만들어보는 Git Action CI/CD — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/322">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>따라하면서 만들어보는 Git Action CI/CD</h1>
+  <div class="meta"><span class="cat">DevOps</span> · 2020-11-28</div>
+  <article>
+<p>안녕하세요.</p>
+<p>&nbsp;</p>
+<p><a href="https://newbiecs.tistory.com/321">글또 5기를 시작하며</a> 에서 다짐한 것 처럼 Github의 Git Action을 사용하여 CI/CD를 구현하는 방법을 포스팅해보았습니다.</p>
+<p>회사에서는 Git Flow 방식으로 develop, release(stg), master(prod)로 구분하여 브랜치 별로 Push가 감지되면 도커 이미지를 빌드하고,&nbsp;AWS ECR에 빌드 된 이미지를 Push하는 방식으로 사용하였습니다.</p>
+<p>&nbsp;</p>
+<p>경험했던 것들을 정리하여 글을 작성하려고하니 글의 내용이 길어졌고,&nbsp;내용이 길어지면서 독자분들이 흥미를 잃을 수 있을 것이라고&nbsp;판단되어 이 글은 간단하게 <b>CI/CD에 대한 정의, 테스트 코드, Git Action을 구현</b>해보는 편으로 간추려보았습니다.</p>
+<h2 data-ke-size="size26">목차</h2>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li>CI/CD란 무엇인가?</li>
+<li>테스트 코드란?</li>
+<li>Git Action이란?</li>
+<li>CD(지속적 배포) 구현</li>
+</ul>
+<h2 data-ke-size="size26">CI(지속적 통합)/CD(지속적 배포)란 무엇인가?</h2>
+<p><span><b>CI(지속적 통합)이란</b> 개발자들이 애플리케이션에 적용한 변경 사항이 버그 테스트를 거쳐 리포지토리(예:<span>&nbsp;</span></span><a href="https://redhatofficial.github.io/#!/main">GitHub</a><span><span>&nbsp;</span>또는 컨테이너 레지스트리)에 자동으로 업로드되는 것을 뜻하며, <b>CD(지속적 배포)이란</b> <span>개발자의 변경 사항을 리포지토리에서 고객이 사용 가능한 프로덕션 환경까지 자동으로 릴리스하는 것을 의미합니다.</span></span></p>
+<p>&nbsp;</p>
+<p>아래 그림을 보면서 단계 별로 설명을 드리도록 하겠습니다.</p>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" width="770" height="NaN" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/322/01.png" data-phocus="/assets/posts/322/01.png" data-alt="CI/CD Flow"><img src="/assets/posts/322/01.png" data-origin-width="0" data-origin-height="0" width="770" height="NaN" data-ke-mobilestyle="widthContent"/></span><figcaption>CI/CD Flow</figcaption>
+</figure>
+</p>
+<p>1. 개발자 뚜벅이는 파이썬 코드를 작성했고, 테스트코드까지 작성하여 <b>Github에 Pull Request</b>를 하였습니다.</p>
+<p>2. Github Action에서는 <b>내가 정의한 yaml 파일에 적힌 내용으로 어떠한 작업을 수행</b>합니다.</p>
+<p>3. 선임개발자는 뚜벅이가 작성한 코드를 보고 Main 브랜치에 Merge 시킵니다.</p>
+<p>4. <b>DockerHub에 뚜벅이가 작성한 코드를 이미지 빌드하여 업로드</b>합니다.</p>
+<p>&nbsp;</p>
+<p>이러한 순서로 CI/CD가 진행 될 것이다. 라는 정도만 기억하시면 됩니다.</p>
+<p>완벽하게 이해하려고 하실 필요는 없습니다.</p>
+<p>&nbsp;</p>
+<p>다음으로 테스트 코드에 대해 간단하게 구현하고, 설명드리도록 하겠습니다.</p>
+<h2 data-ke-size="size26">테스트 코드란?</h2>
+<p>우리가 지속적인 통합(CI)를 하기 위해서는 작성한 코드가 정상적으로 동작하는지를 확인해야 합니다.</p>
+<p>&nbsp;</p>
+<p><span><span><span>pytest 프레임 워크를 사용하면 소규모 테스트를 쉽게 작성할 수 있지만 애플리케이션 및 라이브러리에 대한 복잡한 기능 테스트를 지원하도록 확장됩니다. </span></span></span><span>테스트 코드는 능숙하게 작성하고 이 코드를 패러랠하게 돌리는 것은 이제 좋은 습관으로 인정받고 있습니다. 이 방법을 현명하게 사용하면 코드의 의도를 보다 명확히하는데 좋을 뿐 아니라, 아키텍처의 결합도를 낮출 수 있습니다.</span></p>
+<p>&nbsp;</p>
+<p><span>간단한 테스트 코드를 작성해보겠습니다.</span><span></span></p>
+<p>&nbsp;</p>
+<p><span>test_sample.py 파일을 생성해주시고, 안에 pytest 공식문서 예제인 간단한 테스트 코드를 사용해보겠습니다.</span></p>
+<p><span>코드를 보면 항상 성공하는 케이스입니다. <i>여러분들이 사용하실 때는 실제 로직을 검증할 수 있는 테스트코드를 작성해야 합니다.</i></span><span></span></p>
+<pre id="code_1605096015897" class="python" data-ke-language="python" data-ke-type="codeblock"><code># content of test_sample.py
+def inc(x):
+    return x + 1
+
+
+def test_answer():
+    assert inc(4) == 5</code></pre>
+<p>작성한 테스트 코드를 실행하려면 커맨드 라인에 pytest를 입력하면 됩니다.</p>
+<h2 data-ke-size="size26">Git Action이란?</h2>
+<p><b>Github Action</b>은 Github 저장소를 기반으로 소프트웨어 개발<span>&nbsp;</span><b>Workflow</b>를 자동화 할 수 있는 도구입니다.&nbsp;간단하게 말하자면 Github에서 직접 제공하는 CI/CD 도구라고 할 수 있습니다.&nbsp;</p>
+<p>Workflow는 Github 저장소에서 발생하는 build, test, package, release, deploy 등&nbsp;다양한 이벤트를 기반으로 직접 원하는 Workflow를 만들 수 있습니다.</p>
+<p>Workflow는<span>&nbsp;</span><b>Runners</b>라고 불리는 Github에서 호스팅 하는 머신의 Linux, macOS, Windows 환경 그리고 컨테이너에서 실행할 수 있습니다. <b>간단히 정리하면 Workflow를 실행하기 위해 컨테이너가 생성되고, 그 안에서 우리가 정의한 작업들을 수행하고 없어집니다.</b></p>
+<p>&nbsp;</p>
+<p>Git Action을 만들기 위해서는 아래 사진과 같이 .github/workflows 라는 폴더를 생성하겠습니다.</p>
+<p>생성한 폴더 안에 apptest.yaml 파일을 생성해주었습니다. yaml이라는 파일을 처음보시는 분도 계실텐데 간단하게 설명하자면 JSON과 같이 데이터 교환 format 입니다.</p>
+<p><b><span ><i>yaml 파일을 작성하실 때 주의하실 점이 하나 있습니다. yaml 에서 indent는 스페이스바 2번 입니다.</i></span></b></p>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/322/02.png" data-phocus="/assets/posts/322/02.png" data-alt="파일 구조"><img src="/assets/posts/322/02.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span><figcaption>파일 구조</figcaption>
+</figure>
+</p>
+<p>Git Action yaml을 작성할 때 필요한 문법들을 설명해드리도록 하겠습니다.</p>
+<h4 data-ke-size="size20"><b>On</b></h4>
+<p><b>on</b>은 워크플로우를 트리거하는 Github 이벤트의 이름입니다.</p>
+<p>아래와 같이 Push, PullRequest 트리거되면 Workflow가 동작하게 됩니다.</p>
+<p>&nbsp;</p>
+<p>case1의 경우를 살펴보면 branche main에 PullRequest가 트리거되면 동작 한다는 의미입니다.</p>
+<p>case2는 위에서 살펴봤던 release가 트리거 되면 동작하도록 설정되어있지만 types라는 조건이 붙어 조건에 속하는 경우에만 Workflow가 동작되도록 할 수 있습니다.</p>
+<pre id="code_1605097868940" class="python"  data-ke-language="python" data-ke-type="codeblock"><code># case1
+on:
+  pull_request:
+    branches:
+      - main
+      
+on: [push, pull_request]
+
+on: pull_request
+
+# case2
+on:
+  release:
+    types: [published, created, edited]</code></pre>
+<h4 data-ke-size="size20"><b>Job</b></h4>
+<p><b>job</b>&nbsp;<span>워크플로우 실행은 하나 이상의 <b>작업(job)</b>으로 구성됩니다. 작업은 기본적으로 병렬로 실행됩니다.</span></p>
+<p><span>case1 처럼 구현하면 2개의 작업이 병렬로 진행됩니다.</span></p>
+<pre id="code_1605098717478" class="python" data-ke-language="python" data-ke-type="codeblock"><code>jobs:
+  deploy:
+    name: App Test # job name
+    runs-on: ubuntu-latest # 각 작업은 실행으로 지정된 환경에서 실행됩니다.
+    
+# case1
+jobs:
+  my_first_job:
+    name: My first job
+  my_second_job:
+    name: My second job</code></pre>
+<h4 data-ke-size="size20"><b>Steps</b></h4>
+<p><b>stpes</b> 가장 중요한 부분입니다.</p>
+<p>- Command 명령을 실행할 수 있습니다.</p>
+<p>- Github Action Market Place에서 다른사람들이 만들어놓은 오픈소스를 가져와 사용할 수 있습니다. <br />- uses: 누군가가 만들어 놓은 것을 가져와 사용하는 것 입니다.</p>
+<p>&nbsp;</p>
+<p>아래 예시의 steps별로 설명해드리도록 하겠습니다.</p>
+<p>&nbsp;</p>
+<p>1. Checkout은 현재 상태의 소스코드를 가상의 컨테이너 안으로 Checkout해주는 역할을 합니다.</p>
+<p>2. 다음으로 Setup-python은 가상의 컨테이너 안에 python이 돌아갈 수 있는 환경을 설치하는 것 입니다.</p>
+<p>3. Install dependencies는 python의 의존성을 설치해주는 단계입니다.</p>
+<p>4. 마지막으로 pytest은 커맨드 명령으로 pytest를 입력하면 테스트가 진행됩니다.</p>
+<pre id="code_1605098876337" class="python" data-ke-language="python" data-ke-type="codeblock"><code>steps:
+  - name: Checkout
+    uses: actions/checkout@v2
+  - name: Set up Python 3.7
+    uses: actions/setup-python@v1
+    with:
+      python-version: 3.7
+  - name: Install dependencies
+    run: |
+      python -m pip install --upgrade pip
+      pip install -r requirements.txt
+  - name: Test
+    run: |
+	  pytest</code></pre>
+<p>지금까지 간단하게 GitAction Workflow의 문법에 대해 알아봤습니다.</p>
+<p>더 자세한 사용법을 알고 싶으신분들은 참고에 있는 GitAction 링크를 참고하시기 바랍니다.</p>
+<p>&nbsp;</p>
+<p>위에서 작성한 것들을 정리하면 아래와 같습니다.</p>
+<pre id="code_1605102717057" class="html xml" data-ke-language="html" data-ke-type="codeblock"><code># apptest.yaml
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: App Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Test
+        run: |
+          pytest</code></pre>
+<p>작성한 파일을 main branch에 Push하고, branch를 하나 만들어 PR를 보내보겠습니다.</p>
+<p>feature/readme-reference라는 branch를 만들어 Push하였고, Github로 이동하여 PR을 보내보도록 하겠습니다.</p>
+<p><figure class="imageblock alignCenter" data-filename="realreal.gif" data-origin-width="926" data-origin-height="714" width="658" height="NaN" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/322/03.gif" data-phocus="/assets/posts/322/03.gif" data-alt="&amp;amp;lt;영상1&amp;amp;gt;"><img src="/assets/posts/322/03.gif" data-filename="realreal.gif" data-origin-width="926" data-origin-height="714" width="658" height="NaN" data-ke-mobilestyle="widthContent"/></span><figcaption>&lt;영상1&gt;</figcaption>
+</figure>
+<figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/322/04.png" data-phocus="/assets/posts/322/04.png"><img src="/assets/posts/322/04.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span></figure>
+</p>
+<p>사진에서 밑줄 친 부분을 보면 <span>앞서 만들었던 App Test가 돌아가는 것을 확인할 수 있습니다.&nbsp;</span>하지만 <span >&lt;영상1&gt;을 잘 보면 중간에 Merge pull request를 할 수 있게 초록색으로 변경되어 있는 것을 확인할 수 있습니다.</span></p>
+<p>&nbsp;</p>
+<p>정리해보자면,</p>
+<p>1. PR Create</p>
+<p>2. Merge pull request(버튼 활성화)</p>
+<p>3. Git Action 수행(버튼 비활성화) 같이 진행됩니다.</p>
+<p>&nbsp;</p>
+<p>여기서 2번 동작의 경우에는 우리가 만든 Action이 다 끝나지도 않았고, 통과했는지 여부도 모르는데 Merge 버튼이 활성화 되었습니다.</p>
+<p>해당 동작은 불필요하기에 없애주도록 하겠습니다.</p>
+<p>&nbsp;</p>
+<p>github 웹 페이지 이동, 작업 할 레포로 이동합니다.</p>
+<p><b>settings -&gt; Branches -&gt; Branch&nbsp;protection&nbsp;rules</b> 이동 후 아래와 같이 설정해주면 됩니다.</p>
+<p>&nbsp;</p>
+<p>Status checks found in the last week for this repository는 Git Action yaml파일 job 안에 정의한 Name을 선택해주시면 됩니다.</p>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/322/05.png" data-phocus="/assets/posts/322/05.png"><img src="/assets/posts/322/05.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span></figure>
+</p>
+<p>좋습니다, 설정 후 어떻게 바뀌었는지 확인해보겠습니다.</p>
+<p><figure class="imageblock alignCenter" data-filename="git_branch_protect.gif" data-origin-width="1248" data-origin-height="704" width="660" height="NaN" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/322/06.gif" data-phocus="/assets/posts/322/06.gif"><img src="/assets/posts/322/06.gif" data-filename="git_branch_protect.gif" data-origin-width="1248" data-origin-height="704" width="660" height="NaN" data-ke-mobilestyle="widthContent"/></span></figure>
+</p>
+<p>Git Action 테스트가 끝나기 전에는 Merge Pull Request가 비활성화 된 것을 확인할 수 있습니다.</p>
+<h2 data-ke-size="size26">CD(지속적 배포) 구현</h2>
+<p>지속적인 배포가 가능하려면 어떻게 해야 할까요?</p>
+<p>&nbsp;</p>
+<p>도커 이미지를 빌드하고, AWS ECR이나 Azure ACR, Docker Hub에 Push한다고 가정하겠습니다.&nbsp;하지만, 이미지를 Push 한다고해서 내가 원하는 서버 인스턴스에 알아서 이미지를 Pull 받아서 실행시키지는 않을 겁니다.</p>
+<p>&nbsp;</p>
+<p>그렇다면 어떻게 배포를 해야할까요?</p>
+<p>&nbsp;</p>
+<p>제가 경험해본 방법으로는&nbsp;AWS CodeDeploy(코드 배포 자동화)가 있습니다.</p>
+<p>&nbsp;</p>
+<p>Git Action에서 코드를 압축한 다음 AWS S3에 업로드 한 뒤 <span >codedeploy-agent가 인스턴스 서버에 코드를 옮기는 방법입니다. 서비스 다운타임이 적다는 것과 오토스케일링을 손쉽게 설정 할 수 있다는 것과 yaml 파일로 배포가 되기 전에 환경을 설치하거나 배포가 되고나서 어떤 동작을 수행하라는 것을 간단하게 만들 수 있었습니다.&nbsp;</span><span >단점으로는 codedeploy-agent가 서버에 설치되어 메모리를 차지한다는 것과 버전관리를 해주는 것은 고맙지만 서버에 최근 배포 된 5개의 코드를 보관하면서 용량을 차지한다는 것 입니다.</span></p>
+<p>&nbsp;</p>
+<p>이 글은 깊게 AWS의 서비스를 이용하여 배포를 자동화하는 것 까지는 들어가지 않을 것이기 때문에 Git Action에서 도커 이미지를 빌드하고, Docker Hub에 이미지를 Push하는 과정만 설명해보도록 하겠습니다.</p>
+<h4 data-ke-size="size20">Dockerfile</h4>
+<p>도커파일을 하나 만들어보겠습니다.</p>
+<pre id="code_1606483560418" class="python" data-ke-language="python" data-ke-type="codeblock"><code>FROM python:3.7-slim
+
+WORKDIR /app  # 작업 할 디렉터리를 지정
+COPY requirements.txt .  # requirements를 /app 안으로 COPY
+
+RUN pip install -r requirements.txt  # 의존성 설치
+
+COPY . .  # Source Code를 /app 안으로 COPY
+
+RUN pytest  # pytest 실행</code></pre>
+<p>`docker build -t action:latest .` 명령어로 이미지를 빌드하겠습니다.</p>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/322/07.png" data-phocus="/assets/posts/322/07.png" data-alt="Docker Build"><img src="/assets/posts/322/07.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span><figcaption>Docker Build</figcaption>
+</figure>
+</p>
+<p>도커 이미지가 정상적으로 빌드되었습니다. `docker images` 명령어로 생성 된 이미지를 확인 할 수 있습니다.</p>
+<p>이제 도커 이미지를 업로드 할 곳이 필요합니다. Docker Hub 회원가입하고 레포지토리를 만드는 과정은 간단하기 때문에 설명은 생략하고 Git Action yaml 파일을 수정해주도록 하겠습니다.</p>
+<p>&nbsp;</p>
+<h4 data-ke-size="size20">Docker Hub Login</h4>
+<p>Git Action 안에서 Docker hub에 로그인해야 도커 이미지를 Push 할 수 있습니다.</p>
+<p>사용하는 방법은 아래와 같습니다.</p>
+<pre id="code_1606485344734" class="python" data-ke-language="python" data-ke-type="codeblock"><code>jobs:
+  login:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}</code></pre>
+<p>&nbsp;</p>
+<p>여기서 ${{ secrets.DOCKERHUB_USERNAME }} 안에 보시면 secrets는 Github 레포지토리에서 생성하는 secrets을 가져와 사용하는 것 입니다. Github settings -&gt; Secrets로 이동해 USERNAME과 TOKEN을 입력해주도록 하겠습니다.</p>
+<p>Dockerhub Token 생성방법은 <span ><a  href="https://docs.docker.com/docker-hub/access-tokens/#create-an-access-token" target="_blank" rel="noopener">링크</a></span>로 이동하여 확인하시기 바랍니다.</p>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/322/08.png" data-phocus="/assets/posts/322/08.png" data-alt="Github Secrets 등록"><img src="/assets/posts/322/08.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span><figcaption>Github Secrets 등록</figcaption>
+</figure>
+</p>
+<p>다음으로 Docker hub에 action 레포지토리를 생성해주도록 하겠습니다.</p>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/322/09.png" data-phocus="/assets/posts/322/09.png"><img src="/assets/posts/322/09.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span></figure>
+</p>
+<p><span >위 사진에서 Docker commands를 보시면 2044smile는 계정명이고, action은 레포지토리 이름입니다.</span></p>
+<p><span >tagname은 v&lt;major&gt;.&lt;minor&gt;.&lt;patch&gt; 이런식으로 버전관리를 해주시면 됩니다. 이 글에서는 간단하게 latest로 관리하겠습니다.</span></p>
+<p>&nbsp;</p>
+<p>다시 yaml 파일로 돌아와서 Secrets을 등록해주었고, Docker login은 정상적으로 잘 동작할 것 입니다. 다음으로 해야 할 일은 도커 이미지를 빌드하고, 도커 허브에 Push하는 일만 남았습니다.</p>
+<p>&nbsp;</p>
+<p>우리는 앞서 <b>`docker build action:latest .`</b> 로 이미지를 빌드 했었습니다. 하지만 해당 이미지를 그대로 도커 허브 레포지토리에 Push하게 된다면 경로가 맞지 않아 Push를 하지 못합니다. 그래서 <b>`docker tag action:latest 2044smile/action:latest`</b> 명령어로 도커 이미지 이름을 수정 해야 합니다.</p>
+<p>&nbsp;</p>
+<p>마지막으로 docker push 명령어로 <b>`docker push 2044smile/action:latest`</b> 이미지를 도커 허브 레포지토리에 Push하면 됩니다.</p>
+<pre id="code_1606487934563" class="python" data-ke-language="python" data-ke-type="codeblock"><code>on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: App Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Test
+        run: |
+          pytest
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: build and release to DockerHub
+        env:  # 환경변수로 값을 지정하여 사용할 수 있습니다.
+          REPO: 2044smile
+          LAYER_NAME: action
+        run: |
+          docker build -t $LAYER_NAME  .
+          docker tag $LAYER_NAME:latest $REPO/$LAYER_NAME:latest
+          docker push $REPO/$LAYER_NAME:latest</code></pre>
+<p>파일을 수정하고, main 브랜치에 PullRequest를 보내보면 Git Action이 동작하면서 생성해두었던 Docker Hub 이미지가 올라갑니다.</p>
+<p>아래 사진을 보시면 이미지를 빌드하다보니 시간이 좀 더 오래 걸린 것을 확인할 수 있습니다.</p>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/322/10.png" data-phocus="/assets/posts/322/10.png"><img src="/assets/posts/322/10.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span></figure>
+</p>
+<p>마지막으로 Docker Hub에 이미지가 잘 올라갔는지 확인해보도록 하겠습니다.</p>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" width="736" height="NaN" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/322/11.png" data-phocus="/assets/posts/322/11.png" data-alt="Docker Hub"><img src="/assets/posts/322/11.png" data-origin-width="0" data-origin-height="0" width="736" height="NaN" data-ke-mobilestyle="widthContent"/></span><figcaption>Docker Hub</figcaption>
+</figure>
+</p>
+<h4 data-ke-size="size20">마무리</h4>
+<p>테스트코드로 코드를 검증하고, 도커 이미지를 새롭게 빌드하여 이미지 저장소에다가 Push하는 CI/CD를 구현하였습니다.</p>
+<p>글을 작성할 때 Github, Docker에 대한 설명을 생략하였기 때문에 Git과 Docker를 사용해보지 않으신분들에게는 이해하기 어렵겠다는 생각을하여 <span >만들어보면서 이해하는 것이 가장 좋은 방법이라고 생각하기에&nbsp;</span>제목을 '따라하면서 만들어보는' 이라는 컨셉으로 글을 작성해보았습니다. 추가설명이 필요하거나 조언을 주실 부분이 있으시면 편하게 댓글로 피드백주시면 감사하겠습니다.</p>
+<h2 data-ke-size="size26">참고</h2>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><a href="https://www.redhat.com/ko/topics/devops/what-is-ci-cd" target="_blank" rel="noopener"><i>CI/CD란 무엇인가?</i></a></li>
+<li><a href="https://docs.pytest.org/en/stable/" target="_blank" rel="noopener"><i>pytest</i></a></li>
+<li><a href="https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idsteps" target="_blank" rel="noopener"><i>GitAction</i></a></li>
+</ul>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p></div>
+            
+
+
+
+
+
+
+
+
+
+<div data-tistory-react-app="NaverAd"></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/322">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

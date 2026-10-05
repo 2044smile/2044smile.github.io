@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AWS 보안 그룹(SecurityGroup) 사용 시 8가지 모범 사례 — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/411">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>AWS 보안 그룹(SecurityGroup) 사용 시 8가지 모범 사례</h1>
+  <div class="meta"><span class="cat">DevOps</span> · 2024-01-09</div>
+  <article>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-filename="securitygroups.webp" data-origin-width="1600" data-origin-height="752"><span data-url="/assets/posts/411/01.png" data-phocus="/assets/posts/411/01.png"><img src="/assets/posts/411/01.png" loading="lazy" width="1600" height="752" data-filename="securitygroups.webp" data-origin-width="1600" data-origin-height="752"/></span></figure>
+</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">&nbsp;안녕하세요.</p>
+<p data-ke-size="size16">오늘 배워볼 내용은 AWS 보안 그룹(SecurityGroup) 모범 사례에 대해 알아보고</p>
+<p data-ke-size="size16">모범 사례를 바탕으로 적용해보는 것을 해보도록 하겠습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><b></b><b><a href="https://www.jit.io/blog/best-practices-for-aws-security-groups">https://www.jit.io/blog/best-practices-for-aws-security-groups</a></b></p>
+<figure id="og_1704767893863" contenteditable="false" data-ke-type="opengraph" data-ke-align="alignCenter" data-og-type="article" data-og-title="8 Best Practices When Using AWS Security Groups | Jit" data-og-description="While AWS is generally secure, the configurations and security settings need to be defined. Discover best practices for AWS Security Groups from Jit." data-og-host="www.jit.io" data-og-source-url="https://www.jit.io/blog/best-practices-for-aws-security-groups" data-og-url="https://www.jit.io/blog/best-practices-for-aws-security-groups" data-og-image="https://blog.kakaocdn.net/dna/bdSkFB/hyU2jCVluT/AAAAAAAAAAAAAAAAAAAAAKkVxHTZBGwBww8cGD4Cbr_BJQDwqnZ1riNspSgSFR6b/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=c0nLIz05kFd4cSXaXJj4TPDVIsU%3D"><a href="https://www.jit.io/blog/best-practices-for-aws-security-groups" target="_blank" rel="noopener" data-source-url="https://www.jit.io/blog/best-practices-for-aws-security-groups">
+<div class="og-image" style="background-image: url('https://blog.kakaocdn.net/dna/bdSkFB/hyU2jCVluT/AAAAAAAAAAAAAAAAAAAAAKkVxHTZBGwBww8cGD4Cbr_BJQDwqnZ1riNspSgSFR6b/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=c0nLIz05kFd4cSXaXJj4TPDVIsU%3D');">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">8 Best Practices When Using AWS Security Groups | Jit</p>
+<p class="og-desc" data-ke-size="size16">While AWS is generally secure, the configurations and security settings need to be defined. Discover best practices for AWS Security Groups from Jit.</p>
+<p class="og-host" data-ke-size="size16">www.jit.io</p>
+</div>
+</a></figure>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">링크 에서는 8가지 모범 사례를 설명하지만, 필요한 것들만 정리해 보겠습니다.</p>
+<h4 data-ke-size="size20"><b>1. Avoid using "default" Security Groups "기본값" 보안 그룹 사용 안함</b></h4>
+<p data-ke-size="size16">default 라는 것은 VPC 를 만들 게 되면 기본적으로 생성되는 보안 그룹 입니다.</p>
+<p data-ke-size="size16">default 보안 그룹을 살펴보면 "모든 트래픽, 프로토콜 전체, 포트 범위 전체" 가 뚫려 있습니다.</p>
+<p data-ke-size="size16"><span ><b>인바운드, 아웃바운드가 전부 열려 있는 상태이기 때문에 "default" 는 사용 안하시는 게 좋습니다.</b></span></p>
+<h4 data-ke-size="size20"><b>2. Simplify the management of security groups 보안 그룹 관리 간소화</b></h4>
+<p data-ke-size="size16">Description, TAG 를 사용한다고 보면 되겠습니다.</p>
+<p data-ke-size="size16"><b><span >특정 보안 그룹 규칙이 생성되거나 업데이트된 시기와 이유가 같은 세부 정보를 추가</span></b>할 수 있습니다.</p>
+<h4 data-ke-size="size20"><b>3. Minimize the number of Security Groups 보안 그룹 최소화</b></h4>
+<p data-ke-size="size16">일반적으로 오류 감사 및 관리를 단순화하기 위해 <span ><b>보안 그룹 수를 최소화하는 것이 모범 사례</b></span>로 간주됩니다.<b></b></p>
+<p data-ke-size="size16">유사한 기능이나 보안 요구 사항을 가진 리소스를 관리하려면 각 보안 그룹을 사용해야 합니다.</p>
+<p data-ke-size="size16">이렇게 하면 보안 그룹 수를 줄이고 오류를 방지하는 것이 더 쉬워집니다.</p>
+<h4 data-ke-size="size20"><b>4. Avoid using large port ranges <span >큰 포트 범위 사용하지 마십시오</span></b></h4>
+<p data-ke-size="size16">포트만으로 보안 그룹을 구성해야 합니다.</p>
+<p data-ke-size="size16">예시와 같이 큰 포트 범위를 사용하지 말라는 것 입니다.</p>
+<p data-ke-size="size16">EX] 8000-8080</p>
+<h3 data-ke-size="size23"><b>실 사용 예시</b></h3>
+<p data-ke-size="size16">은행 관련 기업을 운영하고 있다고 생각 해보겠습니다.</p>
+<p data-ke-size="size16">A 은행에는 예금, 적금, 대출 여러 개의 서비스가 존재합니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">보안 그룹 관리 간소화, 보안 그룹 최소화를 적용하여 보안 그룹 수를 최소화 하겠습니다.</p>
+<p data-ke-size="size16">기본적으로 접속을 해야 되니 때문에 22번 포트를 열어주겠습니다.</p>
+<p data-ke-size="size16">예금, 적금, 대출의 경우 회사 내부에서 관리하고 진행하는 것이라 내부망으로 보안 그룹을 생성해줬습니다.</p>
+<p data-ke-size="size16"><span ><b>그러면 22번 포트, 내부망 보안 그룹 총 2개의 보안 그룹이 생성 됩니다.</b></span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span ><b>이런식으로 최대한 보안 그룹 관리를 간소화 하고,</b></span></p>
+<p data-ke-size="size16"><span ><b>보안 그룹 최소화를 적용하여 보안 그룹 수를 최소화 해야 합니다.</b></span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">그리고 만약 10 개의 A-J 의 인스턴스를 관리한다고 하면</p>
+<p data-ke-size="size16">ssh 는 한 개로 묶어서 관리하고, A-securitygroup-, B-securitygroup, ...</p>
+<p data-ke-size="size16">이런식으로 인스턴스마다 보안그룹을 만드는 게 좋다고 생각 합니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span ><b>왜 인스턴스마다 보안그룹을 만들어야 할까요?</b></span></p>
+<p data-ke-size="size16"><span ><b>인스턴스마다 환경이 다르고, 보안 그룹 인바운드, 아웃바운드도 다르게 설정 할 경우가 있기 때문입니다.</b></span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">혹시나 이 생각에 조언을 주시거나 틀린 부분이 있으면 댓글로 알려주시면 감사하겠습니다.</p>
+<p data-ke-size="size16">&nbsp;</p></div>
+            
+
+
+
+
+
+
+
+
+
+<div data-tistory-react-app="NaverAd"></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/411">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

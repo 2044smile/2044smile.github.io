@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ubuntu 24.04 + DeepStream 9.0 개발 환경 구축기 (Docker 기반) with YOLOv8 — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/442">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>Ubuntu 24.04 + DeepStream 9.0 개발 환경 구축기 (Docker 기반) with YOLOv8</h1>
+  <div class="meta"><span class="cat">AI · Vision</span> · 2026-08-16</div>
+  <article>
+<h3 data-ke-size="size23"><span ><b>왜 이 글을 쓰게 됐나 </b></span></h3>
+<p data-ke-size="size16"><span >GPU 워크스테이션(RTX A5000 x2, Ubuntu 24.04)에 NVIDIA DeepStream 9.0 개발 환경을 새로 세팅하게 됐다. DeepStream, CUDA, TensorRT를 호스트에 직접 깔면 버전 궁합 맞추기가 은근히 손이 많이 가고, 나중에 다른 장비에 옮길 때 또 삽질을 반복해야 한다. 그래서 이번에는 <b>호스트에는 GPU 드라이버만 설치하고, 나머지는 </b><b>전부 Docker 컨테이너 안에 넣는 방식</b>으로 접근했다.</span></p>
+<h3 data-ke-size="size23"><span ><b>전체 구조 </b></span></h3>
+<pre id="code_1786858411551" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>u24.04-deepstream9.0/
+├── docker-compose.yml     # 컨테이너 실행 정의
+├── Makefile                # docker compose 명령어 단축
+├── docker/
+│   └── Dockerfile          # DeepStream 9.0 이미지 커스터마이징
+├── scripts/
+│   ├── install_host.sh     # 호스트: 드라이버 + Docker + container-toolkit 설치
+│   └── smoke_test.sh        # 컨테이너 안: 정상 동작 확인 테스트
+├── configs/                 # DeepStream 파이프라인 설정 (git 관리)
+├── models/                  # AI 모델 파일 (git 제외, 용량 큼)
+└── videos/                  # 테스트 영상 (git 제외, 용량 큼)</code></pre>
+<p data-ke-size="size16"><br /><span >호스트에는 GPU 드라이버만 있으면 되고, CUDA/TensorRT/DeepStream처럼 복잡한 건 전부 컨테이너 안에서 해결한다.</span></p>
+<h3 data-ke-size="size23"><span ><b>1. Dockerfile &mdash; DeepStream 9.0 이미지</b></span></h3>
+<p data-ke-size="size16"><span >베이스는 NVIDIA가 공식으로 배포하는 이미지를 그대로 쓴다. </span></p>
+<pre id="code_1786858952818" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code># docker/Dockerfile
+ARG BASE_IMAGE_TAG=9.0-triton-multiarch
+FROM nvcr.io/nvidia/deepstream:${BASE_IMAGE_TAG}
+
+WORKDIR /workspace
+
+RUN apt-get update &amp;&amp; apt-get install -y --no-install-recommends \
+    vim git curl wget gdb python3-pip \
+    &amp;&amp; rm -rf /var/lib/apt/lists/*
+
+# 이미지에 pyds(파이썬 바인딩) wheel이 있으면 설치
+RUN wheel=$(find /opt/nvidia/deepstream/deepstream/lib -maxdepth 1 -name 'pyds*.whl' 2&gt;/dev/null | head -n1); \
+    if [ -n "$wheel" ]; then pip3 install --no-cache-dir "$wheel"; fi</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >ARG BASE_IMAGE_TAG로 빼둔 이유는, 나중에 triton 대신 더 가벼운 samples </span><br /><span >태그로 바꾸고 싶을 때 이 한 줄만 고치면 되게 하기 위해서다.</span></p>
+<h3 data-ke-size="size23"><span ><b>2. docker-compose.yml</b></span></h3>
+<pre id="code_1786859032862" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>services:
+  deepstream:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: u24-deepstream9.0:latest
+    container_name: deepstream9
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all  # 2GPU 환경에서 모든 GPU를 사용하겠다
+              capabilities: [gpu]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all  # 2GPU 환경에서 모든 GPU를 사용하겠다
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    volumes:
+      - ./models:/workspace/models
+      - ./videos:/workspace/videos
+      - ./configs:/workspace/configs
+    network_mode: host
+    stdin_open: true
+    tty: true</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<h3 data-ke-size="size23"><span ><b>3. 호스트 설치 &mdash; 드라이버 + Docker + Container Toolkit</b></span></h3>
+<p data-ke-size="size16"><span >컨테이너가&nbsp;GPU를&nbsp;쓰려면&nbsp;호스트에&nbsp;최소&nbsp;세&nbsp;가지가&nbsp;필요하다.</span></p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >NVIDIA 드라이버 (GPU 인식)</span></li>
+<li><span >Docker</span></li>
+<li><span ><b>nvidia-container-toolkit (컨테이너가 호스트 GPU에 접근할 수 있게 연결)</b></span></li>
+</ul>
+<p data-ke-size="size16"><span >이&nbsp;세&nbsp;가지를&nbsp;한&nbsp;번에&nbsp;설치하는&nbsp;스크립트를&nbsp;만들어뒀다. </span><br /><br /><span >sudo&nbsp;bash&nbsp;scripts/install_host.sh </span></p>
+<pre id="code_1786859338369" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code># scripts/install_host.sh 
+#!/usr/bin/env bash
+# 이 컴퓨터(호스트)에 "GPU를 쓸 수 있는 최소한의 것"만 설치하는 스크립트.
+# DeepStream, CUDA, TensorRT는 여기서 설치하지 않는다. 전부 도커 컨테이너 안에 들어있기 때문.
+#
+# 이 스크립트가 하는 일:
+#   1) NVIDIA 그래픽카드 드라이버 설치
+#   2) make 설치 (Makefile의 make build/up/shell 명령을 쓰기 위해 필요)
+#   3) Docker 설치 (이미 있으면 건너뜀)
+#   4) 컨테이너가 GPU를 쓸 수 있게 해주는 NVIDIA Container Toolkit 설치
+#
+# 실행 후에는 재부팅이 필요할 수 있다.
+
+set -euo pipefail
+
+if [ "$(id -u)" -ne 0 ]; then
+  echo "root 권한이 필요합니다. 다음과 같이 실행하세요: sudo bash scripts/install_host.sh" &gt;&amp;2
+  exit 1
+fi
+
+echo "==&gt; 1/4 NVIDIA 드라이버 설치"
+if command -v nvidia-smi &gt;/dev/null 2&gt;&amp;1; then
+  echo "    이미 드라이버가 설치되어 있습니다. 건너뜁니다."
+  nvidia-smi --query-gpu=name,driver_version --format=csv,noheader
+else
+  apt-get update
+  apt-get install -y ubuntu-drivers-common
+  ubuntu-drivers autoinstall
+  echo "    드라이버 설치 완료. 적용하려면 컴퓨터를 재부팅해야 합니다."
+fi
+
+echo "==&gt; 2/4 make 설치"
+if command -v make &gt;/dev/null 2&gt;&amp;1; then
+  echo "    이미 설치되어 있습니다. 건너뜁니다."
+else
+  apt-get update
+  apt-get install -y make
+fi
+
+echo "==&gt; 3/4 Docker 설치"
+if command -v docker &gt;/dev/null 2&gt;&amp;1; then
+  echo "    이미 Docker가 설치되어 있습니다. 건너뜁니다."
+else
+  curl -fsSL https://get.docker.com | sh
+  usermod -aG docker "${SUDO_USER:-$USER}"
+  echo "    Docker 설치 완료. 방금 그룹 권한이 바뀌었으니 로그아웃 후 다시 로그인하세요."
+fi
+
+echo "==&gt; 4/4 NVIDIA Container Toolkit 설치 (컨테이너가 GPU를 쓰게 해주는 다리 역할)"
+if dpkg -l | grep -q nvidia-container-toolkit; then
+  echo "    이미 설치되어 있습니다. 건너뜁니다."
+else
+  curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey \
+    | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+  curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list \
+    | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' \
+    | tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+  apt-get update
+  apt-get install -y nvidia-container-toolkit
+fi
+
+nvidia-ctk runtime configure --runtime=docker  # Docker에 nvidia 런타임을 연결해준다.
+systemctl restart docker
+
+echo ""
+echo "==&gt; 전부 끝났습니다."
+echo ""
+echo "    [1] 먼저 그래픽카드가 잡히는지 확인하세요:"
+echo "          nvidia-smi"
+echo "        아무것도 안 나오면 재부팅이 필요합니다: sudo reboot"
+echo ""
+echo "    [2] 그 다음 아래 순서대로 실행하면 됩니다"
+echo "          make build          # 도커 이미지 빌드"
+echo "          make up             # 컨테이너 실행"
+echo "          make smoke-test     # DeepStream이 GPU를 잘 쓰는지 확인"
+echo "          make setup-yolov8   # YOLOv8 모델 준비 (처음 한 번, 몇 분 소요)"
+echo "          make analyze VIDEO=내영상.mp4    # videos/ 에 넣은 영상 분석"
+echo ""
+echo "    컨테이너 안으로 직접 들어가려면: make shell"</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<h3 data-ke-size="size23"><span ><b>4. 빌드 &amp; 실행</b></span></h3>
+<blockquote data-ke-style="style2"><span >Makefile은 긴 docker compose ... 명령에 짧은 별명을 붙여둔 것뿐이다. 특별한 문법은 없고 평소 치던 명령을 그대로 적으면 되는데, 맨 위 .PHONY는 "이 이름들은 파일이 아니라 명령"이라고 알려주는 관례적 선언이다.</span></blockquote>
+<pre id="code_1786860366521" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>.PHONY: build up down shell smoke-test setup-yolov8 analyze logs
+
+build:
+	docker compose build
+
+up:
+	docker compose up -d
+
+down:
+	docker compose down
+
+shell:
+	docker compose exec deepstream bash
+
+smoke-test:
+	docker compose exec deepstream bash scripts/smoke_test.sh
+
+# 최초 1회만: YOLOv8s(COCO 80클래스)를 ONNX로 변환해서 models/YOLOv8/ 에 채워 넣음
+setup-yolov8:
+	docker compose exec deepstream bash scripts/setup_yolov8.sh
+
+# 영상 처리 관련 값은 바로 인자로 넘겨서 바꿀 수 있다
+DROP_FRAME_INTERVAL ?= 1
+GIE_INTERVAL ?= 0
+CONF_THRESHOLD ?= 0.25
+
+# 사용법: make analyze VIDEO=내영상.mp4  (처음엔 make setup-yolov8 먼저 실행해둘 것)
+#         make analyze VIDEO=내영상.mp4 DROP_FRAME_INTERVAL=4 GIE_INTERVAL=4 CONF_THRESHOLD=0.3
+analyze:
+	docker compose exec \
+		-e DROP_FRAME_INTERVAL=$(DROP_FRAME_INTERVAL) \
+		-e GIE_INTERVAL=$(GIE_INTERVAL) \
+		-e CONF_THRESHOLD=$(CONF_THRESHOLD) \
+		deepstream bash scripts/analyze_video.sh $(VIDEO)
+
+logs:
+	docker compose logs -f</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<h3 data-ke-size="size23"><span ><b>5. 스모크 테스트</b></span></h3>
+<p data-ke-size="size16"><span >SDK에 원래 들어있는 샘플 영상과 설정 파일로 딱 한 번 돌려보는 <span style="text-align: start;">make smoke-test </span>스크립트를 따로 준비했다.&nbsp;</span></p>
+<pre id="code_1786860103499" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>#!/usr/bin/env bash
+set -euo pipefail
+
+CONFIG_DIR=/opt/nvidia/deepstream/deepstream/samples/configs/deepstream-app
+# 화면(X11) 없는 서버라, 결과를 파일로 저장하는(sink type=3) 설정을 쓴다.
+# source1 계열은 EglSink(화면 출력)라 headless에서 "Could not open X Display"로 죽는다.
+PREFERRED_CONFIG="source2_1080p_dec_infer-resnet_demux.txt"
+
+CONFIG_FILE="$PREFERRED_CONFIG"
+if [ ! -f "$CONFIG_DIR/$CONFIG_FILE" ]; then
+  # 없으면 sink0 type=3(파일 출력)인 설정을 자동으로 찾는다
+  for f in "$CONFIG_DIR"/source*.txt; do
+    if awk '/^\[sink0\]/{f=1} f&amp;&amp;/^type=/{print;exit}' "$f" | grep -q 'type=3'; then
+      CONFIG_FILE=$(basename "$f"); break
+    fi
+  done
+fi
+
+nvidia-smi --query-gpu=name,memory.used,memory.total --format=csv,noheader
+mkdir -p /workspace/videos/smoke_test_output &amp;&amp; cd /workspace/videos/smoke_test_output
+deepstream-app -c "$CONFIG_DIR/$CONFIG_FILE"</code></pre>
+<h3 data-ke-size="size23"><span ><b>6. YOLOv8 모델 준비 (make setup-yolov8)</b></span></h3>
+<p data-ke-size="size16"><span >DeepStream은 <b>파이프라인</b>일 뿐 스스로 물체를 찾지는 못한다. 눈에 해당하는 모델을 꽂아줘야 하는데, 그냥 .pt 파일을 던져준다고 되는 게 아니다. <b>DeepStream이 읽을 수 있는 형태로 3단계를 거쳐야 한다.</b><br /></span></p>
+<pre id="code_1786861422671" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>① 모델 학습
+   PyTorch / YOLO
+        &darr;
+   best.pt / yolov8s.pt
+
+② ONNX 변환
+   best.pt / yolov8s.pt
+        &darr;
+   model.onnx / yolov8s.onnx
+
+③ TensorRT Engine 생성
+   model.onnx / yolov8s.onnx
+        &darr;
+   TensorRT
+        &darr;
+   model.engine
+
+④ 출력 해석
+   TensorRT Output Tensor
+        &darr;
+   YOLO Output Parser
+        &darr;
+   Bounding Box
+   Confidence
+   Class ID
+
+⑤ DeepStream
+   Bounding Box + Metadata
+        &darr;
+   Tracking / OSD / Event / 저장</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >- ① <b>ONNX 변환</b>: PyTorch/Ultralytics에서 학습한 모델을 ONNX라는 프레임워크 독립적인 모델 표현 형식으로 변환하는 과정</span></p>
+<p data-ke-size="size16"><span >- ② <b>TensorRT 엔진</b>: <b>ONNX를 읽고 실제 사용할 GPU와 설정에 맞춰 최적화</b>된 <b>실행 엔진</b>을 만든다</span></p>
+<p data-ke-size="size16"><span >&nbsp; - 이 과정에서 FP16, INT8 등의 정밀도와 GPU에 맞는 최적화가 적용될 수 있다</span></p>
+<p data-ke-size="size16"><span >&nbsp; - 그래서 <b>.engine</b> 은 단순히 ONNX를 다른 확장자로 바꾼 게 아니라 TensorRT가 실제 추론에 사용할 수 있도록 빌드된 엔진</span></p>
+<p data-ke-size="size16"><span >- ③ <b>커스텀 파서</b>: TensorRT가 추론한 YOLO의 출력 Tensor를 DeepStream이 사용할 수 있는 Bounding box, Confidence, Class ID 등의 객체 정보로 변환하는 역할을 한다. YOLO 모델과 출력 형식에 따라 DeepStream에서 기본적으로 처리하지 못하는 경우 Custom Parser가 필요하며, 이번 구성에서는 DeepStream-Yolo 에서 제공하는 YOLO용 Custom Parser를 사용한다.</span></p>
+<p data-ke-size="size16"><span >&nbsp; - [DeepStream-Yolo](<a  href="https://github.com/marcoslucianops/DeepStream-Yolo)" target="_blank" rel="noopener&nbsp;noreferrer">https://github.com/marcoslucianops/DeepStream-Yolo) </a>오픈소스를 쓴다. 즉 YOLO의 출력 결과를 DeepStream이 이해할 수 있도록 연결해 주는 부분을 이미 오픈소스에서 구현했다.<br /></span></p>
+<pre id="code_1786861346405" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code># scripts/setup_yolov8.sh
+# 1) DeepStream-Yolo 저장소 받기 (파서 소스 + 변환 스크립트)
+git clone --depth 1 https://github.com/marcoslucianops/DeepStream-Yolo.git
+
+# 2) 변환에만 필요한 파이썬 패키지
+pip3 install ultralytics onnx onnxslim onnxruntime onnxscript
+
+# 3) 가중치 받아서 ONNX로 변환
+wget https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov8s.pt
+python3 export_yoloV8.py -w yolov8s.pt --dynamic --simplify
+
+# 4) 커스텀 bbox 파서 컴파일 (CUDA 버전을 맞춰줘야 함)
+export CUDA_VER=13.1
+make -C DeepStream-Yolo/nvdsinfer_custom_impl_Yolo
+
+# 5) 결과물 3개가 models/YOLOv8/에 들어간다.
+
+yolov8s.onnx (모델 본체)
+labels.txt (클래스 이름 80개)
+libnvdsinfer_custom_impl_Yolo.so (출력 해석용 파서)</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<h3 data-ke-size="size23"><span ><b>7. 추론 결과</b></span></h3>
+<p data-ke-size="size16"><span >앞에서 구성한 환경에서 DeepStream 9.0 + TensorRT + YOLOv8s를 연결해 실제 영상 추론까지 테스트 했다. 이번 테스트에서는 다음과 같은 흐름으로 동작한다.</span></p>
+<pre id="code_1786863869418" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>MP4 영상
+   &darr;
+DeepStream
+   &darr;
+NVDEC 영상 디코딩
+   &darr;
+YOLOv8 TensorRT
+   &darr;
+Custom YOLO Parser
+   &darr;
+Bounding Box / Confidence / Class
+   &darr;
+DeepStream OSD
+   &darr;
+추론 결과 영상</code></pre>
+<p data-ke-size="size16"><span >태스트에 사용한 모델은 COCO 80개 클래스를 학습한 YOLOv8s 이며, 별도로 YOLO 모델을 학습 시키지 않고 DeepStream-Yolo에서 제공하는 변환 스크립트와 Custom Parser를 사용해 DeepStream에 연결했다.</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >실제 추론 결과는 다음과 같다.</span></p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="3024" data-origin-height="1700"><span data-url="/assets/posts/442/01.png" data-phocus="/assets/posts/442/01.png"><img src="/assets/posts/442/01.png" loading="lazy" width="3024" height="1700" data-origin-width="3024" data-origin-height="1700"/></span></figure>
+<figure class="fileblock" data-ke-align="alignCenter"><a href="https://blog.kakaocdn.net/dna/3mK7H/dJMcaazEXk7/AAAAAAAAAAAAAAAAAAAAALuESzEdpyN_SuKuV9FcNO3ES0xyzlGxg6PrBKMDXlR2/traffic.mp4?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=1%2Fh0rt0zla9Gs28YZ0c8PT8oOY0%3D&attach=1&knm=tfile.mp4" class="">
+    <div class="image"></div>
+    <div class="desc"><div class="filename"><span class="name">traffic.mp4</span></div>
+<div class="size">10.52MB</div>
+</div>
+  </a></figure>
+</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >영상에서 확인할 수 있듯이 컨테이너 내부의 DeepStream 9.0 환경에서 영상 디코딩부터 TensorRT 기반 YOLO 추론, Bounding Box 생성 및 화면 출력까지 정상적으로 동작하는 것을 확인했다.</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >다음 게시글에서는 Secondary Stream 기반 추론(Multi-Stream), Smart Record를 이용한 이벤트 영상 저장, 이벤트 발생 시 고화질 썸네일 생성을 할 예정이다.</span></p></div>
+            
+
+
+
+
+
+
+
+
+
+<div data-tistory-react-app="NaverAd"></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/442">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

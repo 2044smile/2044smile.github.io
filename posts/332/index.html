@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Python Lambda에 대해서 자세히 알아보자 — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/332">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>Python Lambda에 대해서 자세히 알아보자</h1>
+  <div class="meta"><span class="cat">Backend</span> · 2021-04-17</div>
+  <article>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" width="176" height="NaN" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/332/01.png" data-phocus="/assets/posts/332/01.png"><img src="/assets/posts/332/01.png" data-origin-width="0" data-origin-height="0" width="176" height="NaN" data-ke-mobilestyle="widthContent"/></span></figure>
+</p>
+<p>&nbsp;어느 날 회사에서 Lambda를 사용하다 문득 <i>'내가 Lambda를 어디까지 알고 있을까? 익명(Anonymous) 함수는 메모리 사용량이 적다는데 왜 그런걸까?'</i> 라는 호기심에 Lambda에 대해 이것저것 알아보다 알아낸 내용들을 글로 정리해보고자 합니다.</p>
+<p>&nbsp;</p>
+<h2 data-ke-size="size26"><b>Python Lambda란 무엇인가?</b></h2>
+<p><b>컴퓨터 프로그래밍에서 익명 함수(function literal, lambda abstraction, lambda function or lambda expression)는 식별자에 구속되지 않는 함수 정의</b>다. 익명 함수는 종종 고차 함수에 전달되는 논쟁이거나 함수를 반환해야 하는 고차 함수의 결과를 구성하는 데 사용된다. <b>기능이 한 번만 또는 제한된 횟수로만 사용되는 경우, 익명 함수는 명명된 함수를 사용하는 것보다 구문적으로 더 가벼울 수 있다.</b></p>
+<p>&nbsp;</p>
+<p>전자컴퓨터 이전에 모든 기능이 익명으로 이루어진 람다 미적분학을 발명한 데서 유래한다. 몇몇 프로그래밍 언어에서 익명 함수는 람다(lambda)를 사용하고, 익명 함수는 흔히 람다(lambdas) 또는 람다(lambda) 추상화라고 한다.</p>
+<p>&nbsp;</p>
+<p><b>현대에는 더 많은 프로그래밍 언어가 익명함수를 지원하고 있다.</b> - wikipedia</p>
+<p>&nbsp;</p>
+<p><b>Lambda란 사용하고 없어지는 (익명)함수 입니다.</b> 함수가 생성된 곳에서만 사용할 수 있고, 일반 함수처럼 정의해두고 사용하는 것이 아닌 필요한 곳에서 사용하고 없앨 수 있습니다. Lambda 함수는 보통 built-in function인 filter(), map()과 주로 사용되며, functools.reduce()와 같이 functools module도 사용할 수 있습니다.</p>
+<p>&nbsp;</p>
+<p>마지막으로 Lambda 함수는 사용하고 없어지는 익명 함수라고 했습니다, 그렇다면 왜 사라진다는 걸까요?</p>
+<p>&nbsp;</p>
+<p>익명 함수이기 때문에 한 번만 쓰이고, 다음 줄로 넘어가면 힙(heap) 메모리 영역에서 증발하게 됩니다.</p>
+<p>파이썬에서는 모든 것이 객체로 관리되고, 객체는 Reference Counter를 갖게 되는데 해당 카운터가 0 (어떤 것도 객체를 참조하지 않게 되면) 메모리를 반환하게 됩니다. (Python Garbage Collector)</p>
+<p>&nbsp;</p>
+<p>그렇다면 Lambda 함수는 사용 후 무조건 메모리를 반환할까요?</p>
+<pre id="code_1618630442745" class="python"  data-ke-language="python" data-ke-type="codeblock"><code>sum = lambda a, b: a + b
+result = sum(3, 4)
+print(result)
+''''''
+7
+''''''</code></pre>
+<p>위 예시를 살펴보면 람다 함수(객체)를 sum이라는 변수에 저장합니다. 위의 설명대로라면 lambda는 다음 줄에서 sum()이 사용된 후 다음 줄에서 메모리가 삭제되어야 하지만 삭제되지 않습니다. sum이라는 변수의 메모리에 람다 함수의 메모리가 저장되어 있기 때문입니다. 람다 함수가 사용 후 메모리에서 증발하기 위해선 함수의 인자 값에 전달되었을 때 증발하게 됩니다. 또 함수 내부에서 사용하는 람다의 경우 해당 함수가 종료되는 순간 메모리에서 증발합니다.</p>
+<h2 data-ke-size="size26"><b>Python Lambda 논란</b></h2>
+<h3 data-ke-size="size23">Python Lambda는 아래와 같은 여러 논란들이 있습니다.</h3>
+<ul>
+<li><span >Issues with readability 가독성 문제</span></li>
+<li>The imposition of a functional way of thinking 기능적 사고방식 문제</li>
+<li>Heavy syntax with the lambda keyword lambda keyword를 사용한 무거운 문법</li>
+</ul>
+<p>이 외에도 Python 코딩 스타일 가이드인 PEP8 에서는 <i>'<span>Always use a def statement instead of an assignment statement that binds a lambda expression directly to an identifier.' </span></i><span>람다 식을 식별자에 직접 바인딩하는 할당 문 대신 항상 def 문을 사용합니다. 라고 얘기합니다. 이는 Lambda 사용 대신 일반 함수(def)를 정의하여 사용하는 것을 권장한다는 것이고 PEP8에서 Lambda의 다른 용도는 언급하지 않고 있습니다. 하지만 우리는 Python Lambda의 유용한 케이스와 제한이 있는 케이스를 살펴보고, 분명히 유용하게 사용할 수 있다는 것을 알아보도록 하겠습니다.</span></p>
+<h2 data-ke-size="size26"><b>Lambda에서 사용할 수 있는 것들</b></h2>
+<h2 data-ke-size="size26">Basic</h2>
+<pre id="code_1618631111764" class="python" data-ke-language="python" data-ke-type="codeblock"><code>lambda x : x + 1
+
+(lambda x: x + 1)(2)  # 3
+
+add_one = lambda x: x + 1
+add_one(2)  # 3
+
+# multiple arguments
+full_name = lambda first, last: f"Full name: {first.title()} {last.title()}"
+full_name('guido', 'van rossum')</code></pre>
+<h2 data-ke-size="size26">Anonymous Function</h2>
+<pre id="code_1618631153696" class="python" data-ke-language="python" data-ke-type="codeblock"><code>lambda x, y: x + y
+_(1, 2)  # 3
+
+# 즉시 호출된 함수 표현식(IIFE)
+(lambda x, y: x + y)(2, 3) # 5
+
+high_ord_func = lambda x, func: x + func(x)
+high_ord_func(2, lambda x: x * x)  # 6
+high_ord_func(2, lambda x: x + 3)  # 7</code></pre>
+<h2 data-ke-size="size26">Single Expression</h2>
+<pre id="code_1618631582389" class="python" data-ke-language="python" data-ke-type="codeblock"><code>(lambda x:
+(x % 2 and 'odd' or 'even'))(3)  # odd</code></pre>
+<h2 data-ke-size="size26">Arguments</h2>
+<p>def로 정의된 정규 함수 객체와 마찬가지로 Python Lambda 식은 인수로 전달하는 모든 다양한 방법을 지원합니다.</p>
+<pre id="code_1618631772072" class="python" data-ke-language="python" data-ke-type="codeblock"><code>(lambda x, y, z: x + y + z)(1, 2, 3)  # 6
+
+(lambda x, y, z=3: x + y + z)(1, 2)  # 6
+
+(lambda x, y, z=3: x + y + z)(1, y=2)  # 6
+
+(lambda *args: sum(args))(1,2,3)  # 6
+
+(lambda **kwargs: sum(kwargs.values()))(one=1, two=2, three=3)  # 6
+
+(lambda x, *, y=0, z=0: x + y + z)(x=1, y=2, z=3)</code></pre>
+<h2 data-ke-size="size26">Decorator</h2>
+<p>함수를 받아 명령을 추가한 뒤 이를 다시 함수의 형태로 반환하는 Decorator도 lambda에서 사용할 수 있습니다.</p>
+<p><b>Decorator는 함수의 내부를 수정하지 않고 기능에 변화를 주고 싶을 때 사용한다.</b></p>
+<p>일반적으로 함수의 전처리나 후처리에 대한 필요가 있을 때 사용한다.</p>
+<p>또한 데코레이터를 이용해 반복을 줄이고 메서드나 함수의 책임을 확장한다.</p>
+<p>&nbsp;</p>
+<p>먼저 Decorator에 대한 간단한 예시를 보고, lambda에서 적용하는 방법에 대해 살펴보겠습니다.</p>
+<pre id="code_1618632777696" class="python" data-ke-language="python" data-ke-type="codeblock"><code># Decorator Structure
+
+def out_func(func):
+    def inner_func(*args, **kwargs):
+        return func(*args, **kwargs):
+    retrun inner_func
+    
+# Use case
+def decorator(func):
+    def wrapper(*args, **kwargs):
+        print('전처리')
+        print(func(*args, **kwargs))
+        print('후처리')
+        return wrapper
+    return decorator
+
+@decorator
+def example():
+    return 'func'
+
+example()
+"""
+전처리
+func
+후처리
+"""
+
+# 클래스로 만드는 Decorator Structure
+class Decorator:
+    def __init__(self, func):
+        self.func = func
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs)
+        
+# Use case
+class Decorator:
+    def __init__(self, func):
+        self.func = func
+    def __call__(self, *args, **kwargs):
+        print('전처리')
+        print(self.func(*args, **kwargs))
+        print('후처리')
+
+@Decorator
+def example():
+    return 'Class'
+
+example()
+"""
+전처리
+Class
+후처리
+"""</code></pre>
+<p>이제 lambda에서 decorator를 사용하는 방법에 대한 예시를 살펴보겠습니다.</p>
+<p>기본적으로 decorator를 생성해주는 것은 큰 차이가 없습니다.</p>
+<pre id="code_1618632953648" class="python" data-ke-language="python" data-ke-type="codeblock"><code># Defining a decorator
+def trace(f):
+    def wrap(*args, **kwargs):
+        print(f"[TRACE] func: {f.__name__}, args: {args}, kwargs: {kwargs}")
+        return f(*args, **kwargs)
+
+    return wrap
+
+# Applying decorator to a function
+@trace
+def add_two(x):
+    return x + 2
+
+# Calling the decorated function
+add_two(3)
+
+# Applying decorator to a lambda
+print((trace(lambda x: x ** 2))(3))
+"""
+[TRACE] func: add_two, args: (3,), kwargs: {}
+[TRACE] func: &lt;lambda&gt;, args: (3,), kwargs: {}
+9
+"""</code></pre>
+<p>위 예시에서 function.__name__ 함수의 이름을 출력하는데 decorator의 경우엔 add_two라는 함수명이 출력되지만 lambda는 &lt;lambda&gt; 함수명이 출력되는 것을 확인할 수 있습니다. 이러한 방식으로 람다 함수에 데코레이터를 사용하면 디버깅이 유용하고, higher-order- function 또는 key function의 콘텍스트에서 사용되는 람다 함수의 동작을 디버깅하는데 유용합니다.</p>
+<pre id="code_1618633124197" class="python" data-ke-language="python" data-ke-type="codeblock"><code># lambda Decorator example - map()
+list(map(trace(lambda x: x*2), range(3)))
+''''''''''
+[TRACE] Calling &lt;lambda&gt; with args (0,) and kwargs {}
+[TRACE] Calling &lt;lambda&gt; with args (1,) and kwargs {}
+[TRACE] Calling &lt;lambda&gt; with args (2,) and kwargs {}
+[0, 2, 4]
+''''''''''</code></pre>
+<p>하지만 람다에 데코레이터를 사용하는 것은 PEP 8에서 권장하지 않는다고 합니다. 이와 관련된 정보는 <a href="https://www.python.org/dev/peps/pep-0008/#programming-recommendations" target="_blank" rel="noopener">링크</a>를 눌러 확인할 수 있습니다.</p>
+<h2 data-ke-size="size26">Closure</h2>
+<p><span>프로그래밍 언어에서의 클로저란 퍼스트 클래스 함수를 지원하는 언어의 네임 바인딩 기술이다. 클로저는 어떤 함수를 함수 자신이 가지고 있는 환경과 함께 저장한 레코드이다. 또한 함수가 가진 프리 변수(free variable)를 클로저가 만들어지는 당시의 값과 레퍼런스에 맵핑하여 주는 역할을 한다. 클로저는 일반 함수와는 다르게, 자신의 영역 밖에서 호출된 함수의 변수값과 레퍼런스를 복사하고 저장한 뒤, 이 캡처한 값들에 액세스 할 수 있게 도와준다.</span></p>
+<pre id="code_1618633789115" class="python" data-ke-language="python" data-ke-type="codeblock"><code># Basic case
+def outer_func(x):
+    y = 4
+    def inner_func(z):
+        print(f"x = {x}, y = {y}, z = {z}")
+        return x + y + z
+    return inner_func
+
+for i in range(3):
+    closure = outer_func(i)
+    print(f"closure({i+5}) = {closure(i+5)}")
+
+"""
+x = 0, y = 4, z = 5
+closure(5) = 9
+x = 1, y = 4, z = 6
+closure(6) = 11
+x = 2, y = 4, z = 7
+closure(7) = 13
+"""
+
+# lambda Closure example
+def outer_func(x):
+    y = 4
+    return lambda z: x + y + z
+
+for i in range(3):
+    closure = outer_func(i)
+    print(f"closure({i+5}) = {closure(i+5)})
+
+''''''''''
+closure(5) = 9
+closure(6) = 11
+closure(7) = 13
+''''''''''</code></pre>
+<p>이 경우 기본 함수와 람다가 비슷하게 작동합니다. 다음 섹션(Evaluation Time)에서는 람다의 Evaluation time(Evaluation time vs runtime)으로 인해 람다가 이상하게 동작하는 상황에 대해 살펴보겠습니다.</p>
+<h2 data-ke-size="size26">Evaluation Time</h2>
+<p><span>Loop와 관련된 일부 상황에서는 파이썬 람다 함수의 Closure 동작이 직관적이지 않을 수 있습니다. 자유 변수(free variables)가 람다의 콘텍스트에서 바인딩된 경우를 이해해야 합니다.</span></p>
+<pre id="code_1618634139451" class="python" data-ke-language="python" data-ke-type="codeblock"><code># Basic case
+def wrap(n):
+    def f():
+        print(n)
+    return f
+    
+numbers = 'one', 'two', 'three'
+funcs = []
+for n in numbers:
+    funcs.append(wrap(n))
+    
+"""
+one
+two
+three
+"""
+    
+# lambda Evaluation Time case
+numbers = 'one', 'two', 'three'
+funcs = []
+for n in numbers:
+    funcs.append(lambda: print(n))
+    
+for f in funcs:
+    f()
+    
+"""
+three
+three
+three
+"""</code></pre>
+<p>lambda Evaluation Time case의 경우 왜 three가 세 번 출력될까요?</p>
+<p>제가 이해하기로는 예제를 보면 lambda는 print()를 출력하고 있다. 근데 funcs 배열에 값을 넣을 때 lambda 함수를 call 해서 넣는 게 아닌 함수 객체 상태로 들어가 있습니다. funcs를 돌면서 f()를 콜 하게 되는데 이때 n의 마지막 값이 three이기 때문에 three가 3번 출력된 것이라는 생각이 드는데 글을 읽으시는 분들 중 자세한 이유에 대해 아시는 분이 계시다면 댓글로 의견 부탁드립니다.</p>
+<p>&nbsp;</p>
+<p>해당 문제(Evaluation Time)의 해결방법은 아래와 같습니다.</p>
+<pre id="code_1618634387581" class="python" data-ke-language="python" data-ke-type="codeblock"><code>numbers = 'one', 'two', 'three'
+funcs = []
+for n in numbers:
+    funcs.append(lambda n=n: print(n))  # 그 때 그 때 parameters에 넣어서 저장시킨다.
+
+for f in funcs:
+    f()
+
+"""
+one
+two
+three
+"""</code></pre>
+<h2 data-ke-size="size26">Lambda를 우아하게 사용해보자 (map, filter, reduce)</h2>
+<h2 data-ke-size="size26">map()</h2>
+<p>Python built-in 함수는 map()은 첫 번째 인수 (argument)로 함수를 받고, 두 번째 인수의 각 요소에 적용합니다.</p>
+<p>두 번째 인수에는 반복할 수 있는 iterable 한 요소들이 옵니다. 예로는 문자열, 리스트 및 튜플이 있습니다.</p>
+<p>map() 함수는 변환된 컬렉션에 해당하는 iterator를 반환합니다. 예를 들어 각 문자열이 대문자로 표시된 새 목록으로 문자열 목록을 반환하려는 경우 아래와 같이 map()을 사용할 수 있습니다.</p>
+<pre id="code_1618635136353" class="python" data-ke-language="python" data-ke-type="codeblock"><code>list(map(lambda x: x.capitalize(), ['cat', 'dog', 'cow']))
+"""
+['Cat', 'Dog', 'Cow']
+"""</code></pre>
+<p>map() 함수에서 return 한 iteraotr를 Python shell에서 확인하기 위해서는 list()를 이용하여 list로 변환해야 합니다.</p>
+<p>list comprehension으로도 위와 같은 문제를 구현할 수 있습니다.</p>
+<pre id="code_1618635228423" class="python" data-ke-language="python" data-ke-type="codeblock"><code>[x.capitalize(), ['cat', 'dog', 'cow']]
+"""
+['Cat', 'Dog', 'Cow']
+"""</code></pre>
+<h2 data-ke-size="size26">filter()</h2>
+<p>첫 번째 인수로서 함수(function)를 두 번째 인수는 반복할 수 있는 iterable 한 것이여아 한다.&nbsp;</p>
+<p>iterable한 데이터를 특정 조건에 일치하는 값만 추출할 때 사용하는 함수이다.</p>
+<p>&nbsp;</p>
+<p>아래 예시는 정수 목록의 짝수를 필터링하여 출력하는 예시입니다. 추가로 filter()는 iterator를 반환하므로 반복자가 지정한 목록을 구성하는 기본 제공 유형 목록을 호출해야 하고, 즉 list comprehension을 사용할 수 있습니다.</p>
+<pre id="code_1618635795227" class="python" data-ke-language="python" data-ke-type="codeblock"><code># filter example
+even = lambda x: x%2 == 0
+list(filter(even, range(11)))
+"""
+[0, 2, 4, 6, 8, 10]
+"""
+
+# list comprehension
+[x for x in range(11) if x%2 == 0]
+"""
+[0, 2, 4, 6, 8, 10]
+"""</code></pre>
+<h2 data-ke-size="size26">reduce()</h2>
+<p>recude()는 Python3 이후 버전에서 built-in 함수에서 functools 모듈 함수로 전환되었다. reduce()의 첫 번째 argument는 함수이고, 두 번째 argument는 iterable 반복 가능한 것들이 와야 한다. 마지막으로 result accumulator의 초기 값으로 사용되는 세 번째 argument로 이니셜라이저를 사용할 수 있습니다.</p>
+<pre id="code_1618636124281" class="python" data-ke-language="python" data-ke-type="codeblock"><code>import functools
+pairs = [(1, 'a'), (2, 'b'), (3, 'c')]
+functools.reduce(lambda acc, pair: acc + pair[0], pairs, 0)
+"""
+6
+"""
+
+pairs = [(1, 'a'), (2, 'b'), (3, 'c')]
+sum(x for x, _ in pairs)  # 언더스코어(_)는 쌍의 두 번째 값을 무시할 수 있음을 나타내는 Python 규약입니다.
+"""
+6
+"""</code></pre>
+<h2 data-ke-size="size26"><b>Lambda에서 사용할 수 없는 것들</b></h2>
+<h2 data-ke-size="size26">No Statements</h2>
+<p>lambda 함수 내에서 return, pass, assert, or raise와 같은 statements들은 포함될 수 없다.</p>
+<p>만약 포함되면 SyntaxError exception이 발생한다.</p>
+<h2 data-ke-size="size26">Type Annotaions</h2>
+<p>기본 함수에서는 Python Type Checking이 가능하지만 lmabda 안에서는 불가능하다.</p>
+<p>사용되면 Syntax Error exception이 발생한다.</p>
+<pre id="code_1618636298878" class="python" data-ke-language="python" data-ke-type="codeblock"><code># basic
+def full_name(first: str, last: str) -&gt; str:
+    return f"{first.title()} {last.title()}"
+
+# lambda
+lambda first: str, last: str: first.title() + " " + last.title() -&gt; str</code></pre>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/332/02.png" data-phocus="/assets/posts/332/02.png" data-alt="Type Annotations 사용 시 발생하는 Syntax Error"><img src="/assets/posts/332/02.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span><figcaption>Type Annotations 사용 시 발생하는 Syntax Error</figcaption>
+</figure>
+</p>
+<h2 data-ke-size="size26">마무리</h2>
+<p>Python Lambda에 대해 알아보면서 사용 가능한 케이스들 decorator, closure 같은 것들도 사용할 수 있다는 것을 새롭게 알게 되었고, PEP 8 에서는 Lambda를 권장하지 않지만 분명 Lambda를 잘 알고, 적절히 사용한다면 Lambda 사용이 생산성을 올리는데 큰 도움이 되지 않을까 라는 생각이 들었습니다. 본문에서 잘못된 내용이 들어가 있거나 피드백이 있다면 댓글로 남겨주시면 확인하겠습니다.</p>
+<p>&nbsp;</p>
+<p>감사합니다.</p>
+<h2 data-ke-size="size26">Reference</h2>
+<p><b>- Python Lambda란 무엇인가 <a href="https://en.wikipedia.org/wiki/Anonymous_function" target="_blank" rel="noopener">en.wikipedia.org/wiki/Anonymous_function</a></b></p>
+<p><b>- Python Lambda Memory <a href="https://brownbears.tistory.com/375" target="_blank" rel="noopener">brownbears.tistory.com/375</a></b></p>
+<p><b>- How&nbsp;to&nbsp;Use&nbsp;Python&nbsp;Lambda&nbsp;Functions <a href="https://realpython.com/python-lambda/">https://realpython.com/python-lambda/</a></b></p>
+<p><b>- Decorator <a href="https://medium.com/@hckcksrl/python-%EB%8D%B0%EC%BD%94%EB%A0%88%EC%9D%B4%ED%84%B0-decorator-980fe8ca5276">https://medium.com/@hckcksrl/python-%EB%8D%B0%EC%BD%94%EB%A0%88%EC%9D%B4%ED%84%B0-decorator-980fe8ca5276</a></b></p>
+<p><b>- Closure <a href="http://schoolofweb.net/blog/posts/%ED%8C%8C%EC%9D%B4%EC%8D%AC-%ED%81%B4%EB%A1%9C%EC%A0%80-closure/">http://schoolofweb.net/blog/posts/%ED%8C%8C%EC%9D%B4%EC%8D%AC-%ED%81%B4%EB%A1%9C%EC%A0%80-closure/</a></b></p>
+<p>&nbsp;</p></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/332">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

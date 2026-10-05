@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>앤서블(Ansible) 이란? — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/432">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>앤서블(Ansible) 이란?</h1>
+  <div class="meta"><span class="cat">DevOps</span> · 2025-06-25</div>
+  <article>
+<p data-ke-size="size16">&nbsp;안녕하세요.</p>
+<p data-ke-size="size16">Ansible이 무엇인지 그리고 더 나아가 어떻게 쓰이는 지에 대해 알아보겠습니다.</p>
+<h2 data-ke-size="size26">Ansible 이란?</h2>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="490" data-origin-height="322"><span data-url="/assets/posts/432/01.png" data-phocus="/assets/posts/432/01.png"><img src="/assets/posts/432/01.png" loading="lazy" width="490" height="322" data-origin-width="490" data-origin-height="322"/></span></figure>
+</p>
+<p data-ke-size="size16">&nbsp;공식문서에 설명되어 있는 내용을 가져와 보면 아래와 같습니다.</p>
+<p data-ke-size="size16">'Ansible은 복잡성을 줄이고 어디에서나 실행되는 오픈 소스 자동화를 제공합니다.'</p>
+<p data-ke-size="size16">'Ansible을 사용하면 거의 모든 작업을 자동화할 수 있습니다.'</p>
+<p data-ke-size="size16"><span ><b>즉, 인프라를 자동화 한다는 것 입니다.</b></span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span ><i><b>어, 인프라를 자동화 한다? Terraform 도 인프라를 자동화하지 않나?</b></i></span></p>
+<p data-ke-size="size16">간단히 Ansible 과 Terraform의 차이에 대해 알아보겠습니다.</p>
+<table style="border-collapse: collapse; width: 100%; height: 268px;" border="1" data-ke-align="alignLeft">
+<tbody>
+<tr style="height: 16px;">
+<td style="height: 16px;">항목</td>
+<td style="height: 16px;"><b>Ansible</b></td>
+<td style="height: 16px;"><b>Terraform</b></td>
+</tr>
+<tr style="height: 38px;">
+<td style="height: 38px;">목적</td>
+<td style="height: 38px;"><b>구성 관리(Configuration Management)</b></td>
+<td style="height: 38px;"><b>인프라 프로비저닝(Infrastructure Provisioning)</b></td>
+</tr>
+<tr style="height: 22px;">
+<td style="height: 22px;">상태 관리</td>
+<td style="height: 22px;"><span ><b>상태를 따로 저장하지 않음 (stateless)</b></span></td>
+<td style="height: 22px;"><span ><b>상태(state)를 저장하고 비교 (stateful)</b></span></td>
+</tr>
+<tr style="height: 22px;">
+<td style="height: 22px;">언어</td>
+<td style="height: 22px;">YAML (Playbook)</td>
+<td style="height: 22px;">HashiCorp Configuration Language (HCL)</td>
+</tr>
+<tr style="height: 44px;">
+<td style="height: 44px;">실행 방식</td>
+<td style="height: 44px;"><b>SSH나 에이전트 없이</b> 대상 서버에 직접 명령 실행</td>
+<td style="height: 44px;"><b>API 기반</b>으로 리소스 생성 (AWS, Azure 등)</td>
+</tr>
+<tr style="height: 22px;">
+<td style="height: 22px;">주요 사용처</td>
+<td style="height: 22px;"><span ><b>서버 설정, 패키지 설치</b></span>, 데몬 재시작, <span ><b>배포</b></span> 등</td>
+<td style="height: 22px;">VM 생성, 네트워크 구성, 클라우드 리소스 구축</td>
+</tr>
+<tr style="height: 44px;">
+<td style="height: 44px;">idempotency (중복 실행해도 상태 동일)</td>
+<td style="height: 44px;">지원하지만 명시적으로 관리해야 함</td>
+<td style="height: 44px;">기본적으로 강력하게 지원</td>
+</tr>
+<tr style="height: 44px;">
+<td style="height: 44px;">배포 방식</td>
+<td style="height: 44px;">푸시(Push 방식) &ndash; 제어 서버에서 대상 서버로 실행</td>
+<td style="height: 44px;">풀(Pull 방식) &ndash; 클라우드 API와 상태 비교하여 갱신</td>
+</tr>
+</tbody>
+</table>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">위 표 내용을 한번 정리해보면 <b><span >Terraform은 클라우드 인프라 전체를 구성하는 설계자</span></b> 입니다.</p>
+<p data-ke-size="size16"><span ><b>Ansible은 이미 만들어진 서버나 시스템을 설정/운영하는 도구</b></span> 입니다.</p>
+<h3 data-ke-size="size23">Terraform</h3>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li>AWS, GCP, Azure 등에 API로 접근해 가상 서버(VM), 네트워크, 보안그룹 등 인프라를 '새로' 만드는 일을 자동화</li>
+<li>상태를 저장해 변경을 추적하고 재적용 가능</li>
+<li>주로 처음부터 인프라를 구성할 때 사용</li>
+</ul>
+<h3 data-ke-size="size23">Ansible</h3>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span ><b>이미 존재하는 서버에 접속해서 작업을 실행</b></span></li>
+<li><span ><b>운영체제 설정, 패키지 설치, 설정 배포, 서비스 재시작 등 구성 관리</b></span></li>
+<li>SSH 기반 푸시 방식, 별도 에이전트 설치 불필요</li>
+<li>운영 자동화에 적합</li>
+<li><span ><b>멱등성(여러 번 실행해도 동일한 결과를 얻는다)을 지원한다고 하지만, 절대적인 보장은 아니다</b></span></li>
+</ul>
+<h2 data-ke-size="size26">Ansible 구조</h2>
+<h3 data-ke-size="size23"><b>컨트롤 노드 (제어 노드)</b></h3>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span ><b>Ansible이 설치된 서버</b></span></li>
+<li><span ><b>컨트롤 노드는 Master라고 이 게시글에서 칭함</b></span></li>
+<li>모든 명령어를 실행하며, Worker 서버에 SSH로 접속</li>
+<li><span ><i><b>컨트롤 노드(제어 노드) SSH 키를 생성하고, 관리 노드(대상 서버)들에게 SSH 공개 키 전송</b></i></span></li>
+</ul>
+<h3 data-ke-size="size23"><b>관리 노드 (대상 서버)</b></h3>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li>Ansible이 SSH로 접속하여 명령을 실행하는 대상 서버들</li>
+<li><span ><b>관리 노드는 Worker라고 이 게시글에서 칭함</b></span></li>
+</ul>
+<h3 data-ke-size="size23"><b>인벤토리 (Inventory)</b></h3>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li>관리 대상 서버들의 IP/호스트 목록을 정의한 파일</li>
+<li>.ini 또는 .yaml 파일로 관리된다</li>
+</ul>
+<pre id="code_1750830119252" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code># inventory.ini
+
+[webservers]
+192.168.10.101
+192.168.10.102
+
+[dbservers]
+192.168.10.201 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa
+---
+[master]
+10.10.10.10
+
+[worker]
+100.100.100.1
+100.100.100.2
+100.100.100.3</code></pre>
+<h3 data-ke-size="size23"><b>플레이북 (Playbook)</b></h3>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span ><b>YAML 문법으로 작성된 작업 시나리오</b></span></li>
+<li>여러 Task를 순차적으로 정의</li>
+<li><i><span ><b>관리 노드 (대상 서버; Worker) 에서 실행할 모듈</b></span></i></li>
+<li><span ><b>자동화 작업을 순차적(위에서 아래로)으로 정의하는 파일</b></span></li>
+</ul>
+<pre id="code_1750829785317" class="yaml" data-ke-language="html" data-ke-type="codeblock"><code># playbook.yml
+- name: 웹 서버 세팅
+  hosts: webservers    # 인벤토리 그룹 이름
+  become: true         # sudo 권한 사용 (루트 권한으로 실행)
+  tasks:
+    - name: apt 업데이트
+      apt:             # ansible 내장 모듈인 apt
+        update_cache: yes
+        
+    - name: nginx 설치
+      apt:
+        name: nginx
+        state: present # state: present 패키지 설치에 사용
+                       # 이미 설치되어 있으면 아무 일도 하지 않고, 설치되어 있지 않으면 설치
+                       
+    - name: nginx 서비스 실행
+      service:
+        name: nginx
+        state: started # 실행 중이라면 패스, 실행 중이지 않다면 실행
+        enabled: true  # 서버가 부팅될 때 이 서비스가 자동으로 시작되도록 설정</code></pre>
+<h4 data-ke-size="size20"><b>작업 (Task; tasks)</b></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span ><b>플레이북에서 선언된 모듈 실행 단위</b></span></li>
+<li><span ><b>Playbook 내에서 실행되는 단일 작업</b></span></li>
+<li>하나의 작업은 하나의 모듈 호출과 그에 필요한 매개변수 (옵션)을 제공</li>
+<li>작업 하나가 서버에 대해 단일 행동 (예: 패키지 설치, 파일 복사, 서비스 시작 등)을 수행</li>
+</ul>
+<h3 data-ke-size="size23">모듈</h3>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><b>apt</b>, yum, copy, file 등과 같이 특정 작업을 수행하는 단위 기능</li>
+<li><span ><b>내부적으로 Python으로 구현된 작업 단위 코드</b></span></li>
+<li><i><span ><b>사용자가 YAML로 모듈을 호출하면, Ansible이 해당 Python 코드를 원격 서버에 전송하고 실행</b></span></i></li>
+<li><span ><b>모듈은 호스트에 패키지를 설치</b></span>하고, 데이터베이스 사용자를 관리</li>
+<li>하나의 모듈은 하나의 작업을 실행할 수 있고, 플레이북을 이용해 여러 모듈을 선언해 여러 작업을 수행할 수 있음</li>
+</ul>
+<pre id="code_1750830407477" class="yaml" data-ke-language="html" data-ke-type="codeblock"><code>- name: Nginx 설치
+  apt:             # Ansible이 제어 노드에서 apt.py (Python 스크립트)를 준비
+    name: nginx    # 대상 서버에서 apt.py 모듈이 실행되어 apt-get install nginx 명령 수행
+    state: present</code></pre>
+<h3 data-ke-size="size23">역할 (Role)</h3>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li>Playbook 을 더 구조화한 형태</li>
+<li>관련된 Task, Variable, Handler, Template, File 등을 하나의 폴더 구조로 묶은 것</li>
+<li>규모가 커졌을 때 코드 재사용, 역할별 분리, 유지보수가 훨씬 쉬워짐</li>
+</ul>
+<pre id="code_1750831757080" class="html xml" data-ke-language="html" data-ke-type="codeblock"><code>roles/
+└── nginx/
+    ├── tasks/
+    │   └── main.yml           # 실행할 작업들
+    ├── handlers/
+    │   └── main.yml           # 조건부로 실행되는 작업들 (예: 서비스 재시작)
+    ├── vars/
+    │   └── main.yml           # 변수 정의
+    ├── templates/
+    │   └── nginx.conf.j2      # 템플릿 파일
+    ├── files/
+    │   └── index.html         # 복사할 정적 파일
+    └── meta/
+        └── main.yml           # 메타 정보 (의존성 등, 생략 가능)</code></pre>
+<h3 data-ke-size="size23"><b>핸들러 (Handler)</b></h3>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span ><b>Handler는 일반 Task와 유사하지만, 명시적으로 `호출될 때만` 실행됨</b></span></li>
+<li>보통 <span ><i><b>notify</b></i></span> 와 함께 사용되며, 예: 설정 파일을 바꾸면 nginx를 재시작</li>
+<li>하나의 플레이북 내에서 여러 작업이 특정 Handler를 호출할 수 있음</li>
+</ul>
+<pre id="code_1750831901458" class="yaml" data-ke-language="html" data-ke-type="codeblock"><code># Handler
+- name: nginx 설정 파일 배포
+  temmplate:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+  notify: restart nginx</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">&nbsp;핵심 개념인 것들에 대해 살펴봤습니다.</p>
+<p data-ke-size="size16">Ansible은 에이전트가 필요 없는 구조와 YAML 기반의 선언적 설정 덕분에 DevOps 및 인프라 자동화에 매우 적합한 도구 입니다. 간단한 서버 구성부터 복잡한 운영 환경까지, Ansible을 통해 반복 가능한 인프라 관리를 효율적으로 수행할 수 있습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">감사합니다.</p>
+<h3 data-ke-size="size23">Reference</h3>
+<p data-ke-size="size16">- <a href="https://docs.ansible.com/" target="_blank" rel="noopener&nbsp;noreferrer">https://docs.ansible.com/</a></p>
+<figure id="og_1750832933809" contenteditable="false" data-ke-type="opengraph" data-ke-align="alignCenter" data-og-type="website" data-og-title="Ansible Documentation" data-og-description="Ansible community documentation Ansible offers open-source automation that is simple, flexible, and powerful. Got thoughts or feedback on this site? We want to hear from you! Join us in the Ansible Forum or open a GitHub issue in the docsite repository." data-og-host="docs.ansible.com" data-og-source-url="https://docs.ansible.com/" data-og-url="https://docs.ansible.com/" data-og-image=""><a href="https://docs.ansible.com/" target="_blank" rel="noopener" data-source-url="https://docs.ansible.com/">
+<div class="og-image" style="background-image: url();">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">Ansible Documentation</p>
+<p class="og-desc" data-ke-size="size16">Ansible community documentation Ansible offers open-source automation that is simple, flexible, and powerful. Got thoughts or feedback on this site? We want to hear from you! Join us in the Ansible Forum or open a GitHub issue in the docsite repository.</p>
+<p class="og-host" data-ke-size="size16">docs.ansible.com</p>
+</div>
+</a></figure>
+<p data-ke-size="size16">&nbsp;</p></div>
+            
+
+
+
+
+
+
+
+
+
+<div data-tistory-react-app="NaverAd"></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/432">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

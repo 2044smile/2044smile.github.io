@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kuberntes - Monitoring에 대해 알아보자 (Prometheus, Grafana) [실습환경 minikube] — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/330">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>Kuberntes - Monitoring에 대해 알아보자 (Prometheus, Grafana) [실습환경 minikube]</h1>
+  <div class="meta"><span class="cat">DevOps</span> · 2021-03-07</div>
+  <article>
+<p>&nbsp;Kubernetes 환경에서 수많은 클러스터와 파드들이 정상적으로 동작하는지 좀비 프로세스는 없는지 등을 확인하려면 우리는 모니터링 툴의 도움을 받아야 합니다. 수많은 모니터링 툴 중 오늘은 Prometheus(시계열 DB), NodeExporter(메트릭 수집 Agent), Grafana(모니터링 시각화 오픈소스)의 개념과 사용법에 대해 알아보도록 하겠습니다.</p>
+<h2 data-ke-size="size26">Prometheus</h2>
+<p><span>Prometheus는 이벤트 모니터링 및 경고에 사용되는 무료 소프트웨어 응용 프로그램입니다. 유연한 쿼리 및 실시간 경고와 함께 HTTP 풀 모델을 사용하여 구축 된 시계열 데이터베이스에 실시간 메트릭을 기록합니다.&nbsp;</span></p>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/330/01.png" data-phocus="/assets/posts/330/01.png"><img src="/assets/posts/330/01.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span></figure>
+</p>
+<p>Prometheus의 동작과정은 <b>node-exporter</b>는 노드 별로 사용중인 매트릭(CPU, Memory, Disk)을 수집하고 HTTP 통신을 통해 매트릭 데이터를 가져갈 수 있게 /metrics라는 HTTP 엔드포인트를 제공합니다. Prometheus Server가 <b>node-exporter</b>의 엔드포인트로 HTTP GET 요청을 날려 매트릭 정보를 <b>수집(Pull 방식)</b>합니다.</p>
+<p>&nbsp;</p>
+<p><i>일반적인 모니터링 서비스들은 서버에 Agent들을 설치하고, 각각 모니터링 하는 서버로 데이터를 보내고 이를 저장하여 관련 내용들을 보여주게 된다. 하지만 Prometheus의 경우는 각 서버에 exporter를 설치하고 이를 Prometheus Server에서 일정 시간마다 데이터를 가져가는 Pull방식을 사용하고 있습니다. 이러한 이유로 모니터링이 되는 서버에 부하가 적습니다.</i></p>
+<p>&nbsp;</p>
+<p>수집한 정보는 Prometheus WEB UI에서 확인할 수 있으나 Grafana를 같이 사용하는 이유는 시각화에 대한 지원이 미흡하여 Grafana와 같이 사용하는 것 같습니다. 추가로 <b>alertmanager를 사용하여 알람(Notification)</b>을 보낼 수 있고, 여러 Exporter 종류가 존재하며 GPU 관련 지표를 가져오고 싶다면 Nvidia에서 만든 <b>dcgm-exporter</b>를 사용하여 가져올 수 있습니다. Prometheus 파드가 죽었을 경우 매트릭 손실이 일어날 수 있기 때문에 Prometheus에 대한 스토리지를 따로 마운트해주면 됩니다.</p>
+<h2 data-ke-size="size26">Grafana</h2>
+<p><span>Grafana는 다중 플랫폼 오픈 소스 분석 및 대화 형 시각화 웹 애플리케이션입니다. 지원되는 데이터 소스(Prometheus)에 연결되면 웹에 대한 차트, 그래프 및 경고를 제공합니다. </span><span>추가 기능이있는 Grafana Enterprise 버전도 사용할 수 있습니다. </span></p>
+<p>&nbsp;</p>
+<p><span>Grafana를 수집한 매트릭 데이터에 대한 시각화 용도로만 사용해보았는지 시스템 로그 같은 데이터도 시각화에 사용할 수 있다고 합니다. 또 경고(Alerts) 기능을 제공하여 시스템 문제가 발생한 순간의 문제를 식별할 수 있습니다. 경고 규칙 조건이 충족되면 Grafana는 해당 경고에 대해 구성된 채널에 경고를 통지합니다.</span></p>
+<p>&nbsp;</p>
+<p>Grafana를 사용해보면서 느낀 가장 큰 장점은 커뮤니티가 활성화되어있어 대시보드를 만들 필요 없이 사용자들이 만들어놓은 대시보드를 import 하여 사용할 수 있다는 것입니다. <i>(oh my zsh의 테마변경하는 것처럼 간편하게 되어있습니다.)</i></p>
+<h2 data-ke-size="size26">설치(<span >Mac OS 사용자 기준)</span></h2>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><b>minikube v1.18.1 (kubernetes v1.20.2)</b>
+<ul style="list-style-type: disc;">
+<li>Kubernetes 환경을 로컬에서 간단하게 구축할 수 있는 도구</li>
+</ul>
+</li>
+<li><b>kubectl</b>
+<ul style="list-style-type: disc;">
+<li>Command 명령어로 Kubernetes 리소스들을 관리할 수 있는 도구</li>
+</ul>
+</li>
+<li><b>Helm3</b>
+<ul style="list-style-type: disc;">
+<li>Kubernetes Package Manager; 애플리케이션을 보다 빠르게 배포 관리할 수 있도록 해주는 도구</li>
+</ul>
+</li>
+</ul>
+<pre id="code_1615079122476" class="python" data-ke-language="python" data-ke-type="codeblock"><code># minikube
+brew install minikube
+
+# kubectl
+brew install kubectl
+
+# helm
+brew install helm
+
+# minikube 동작
+minikube start 
+</code></pre>
+<p>설치된 minikube를 minikube start로 실행시키면, minikube cluster(Kubernetes)를 사용할 수 있습니다.</p>
+<p>우리는 monitor라는 네임스페이스를 생성하고, monitor 네임스페이스로 이동하여 Prometheus, Grafana를 설치해주도록 하겠습니다.</p>
+<pre id="code_1615080949063" class="python" data-ke-language="python" data-ke-type="codeblock"><code># monitor namespace 생성
+kubectl create namespace monitor
+
+# 생성한 monitor namespace로 이동
+kubectl set-context --current --namespace monitor</code></pre>
+<h2 data-ke-size="size26">Prometheus 설치</h2>
+<pre id="code_1615080668685" class="python" data-ke-language="python" data-ke-type="codeblock"><code># helm repository에 prometheus-community라는 이름으로 repo URL을 추가
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+
+# prometheus 설치
+helm install prometheus prometheus-community/prometheus</code></pre>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/330/02.png" data-phocus="/assets/posts/330/02.png"><img src="/assets/posts/330/02.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span></figure>
+</p>
+<p>Prometheus가 설치되었고 간단한 NOTES와 가이드가 출력됩니다.</p>
+<p>먼저 현재 monitor 네임스페이스 안에 Prometheus 관련 파드들이 생성되었는지 확인해보겠습니다.</p>
+<pre id="code_1615081201297" class="python" data-ke-language="python" data-ke-type="codeblock"><code>kubectl get pod</code></pre>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/330/03.png" data-phocus="/assets/posts/330/03.png"><img src="/assets/posts/330/03.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span></figure>
+</p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li>alertmanager: 앞서 말씀드렸던 alerts을 관리하는 파드입니다.</li>
+<li>kube-state-metrics: Kubernetes Cluster 내부의 자원(CPU, 메모리, 디스크 및 각 컨테이너가 사용하고 있는 리소스 현황, 네트워크 I/O, 정상 컨테이너, 비정상 컨테이너 개수 등)에 대한 매트릭을 수집해주는 exporter입니다.</li>
+<li>node-exporter: 서버 노드의 자원에 대한 매트릭을 수집해주는 exporter입니다.</li>
+<li>pushgateway: 매트릭을 푸시할 수 있는 중간 서비스입니다.</li>
+<li>server: Prometheus WEB UI를 띄울 수 있는 서버입니다.</li>
+</ul>
+<p>prometheus-server 파드를 포트포워딩하여 로컬호스트에서 접속해보겠습니다.</p>
+<pre id="code_1615096818437" class="python" data-ke-language="python" data-ke-type="codeblock"><code>kubectl port-forward prometheus-server-xxx 9090</code></pre>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/330/04.png" data-phocus="/assets/posts/330/04.png"><img src="/assets/posts/330/04.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span></figure>
+<figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/330/05.png" data-phocus="/assets/posts/330/05.png" data-alt="localhost:9090으로 접속"><img src="/assets/posts/330/05.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span><figcaption>localhost:9090으로 접속</figcaption>
+</figure>
+</p>
+<p>localhost:9090으로 접속해서 제대로 연결되었는지 확인해보기 위해 kubelet_running_pods라는 쿼리를 실행하니 12개의 파드가 실행 중이라는 결과가 나왔고, kubectl을 사용하여 실행 중인 파드의 개 수가 12개가 나오는지 확인해보겠습니다.</p>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/330/06.png" data-phocus="/assets/posts/330/06.png" data-alt="Running POD"><img src="/assets/posts/330/06.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span><figcaption>Running POD</figcaption>
+</figure>
+</p>
+<p>모든 네임스페이스에 생성되어있는 파드의 개 수를 세어보니 12개의 파드가 실행중입니다.</p>
+<p>Helm을 통해 손쉽게 Prometheus를 설치하였고, 동작하는지도 확인해봤습니다.</p>
+<h2 data-ke-size="size26">Grafana 설치</h2>
+<pre id="code_1615099661379" class="python" data-ke-language="python" data-ke-type="codeblock"><code># helm repository 추가
+helm repo add grafana https://grafana.github.io/helm-charts
+
+# helm install grafana
+helm install grafana grafana/grafana</code></pre>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/330/07.png" data-phocus="/assets/posts/330/07.png"><img src="/assets/posts/330/07.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span></figure>
+</p>
+<p>설치를 하고 나서 사진에 나와있는 가이드를 따라 admin user의 패스워드를 알아내고, 앞서 설정한 Prometheus처럼 포트 포워딩하여 Grafana WEB UI로 접속해보겠습니다.</p>
+<pre id="code_1615100002451" class="python" data-ke-language="python" data-ke-type="codeblock"><code># admin user의 패스워드 출력
+kubectl get secret --namespace monitor grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+
+# Grafana 포트포워딩
+kubectl port-forward grafana-xxx 3000</code></pre>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/330/08.png" data-phocus="/assets/posts/330/08.png" data-alt="Configuration -&amp;amp;gt; Prometheus"><img src="/assets/posts/330/08.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span><figcaption>Configuration -&gt; Prometheus</figcaption>
+</figure>
+<figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/330/09.png" data-phocus="/assets/posts/330/09.png"><img src="/assets/posts/330/09.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span></figure>
+</p>
+<p>Prometheus Server가 localhost:9090으로 포트 포워딩되어있으니 그대로 입력해주도록 하겠습니다. <b>해당 과정을 진행하면서 두 가지 이슈가 발생하였고, 이에 따른 해결방법은 아래와 같습니다.</b></p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><b>Prometheus가 targets을 가져오지 못하는 이슈 - <a href="http://github.com/prometheus/prometheus/issues/8243" target="_blank" rel="noopener">github.com/prometheus/prometheus/issues/8243</a></b><br />Prometheus Helm Charts를 삭제했다가 다시 생성<br />$ helm delete prometheus 후 앞서 진행한 설치 과정을 진행</li>
+<li><b>Grafana에서 DataSource(Prometheus -&gt; localhost:9090)을 가져오지 못하는 문제 - <a href="http://github.com/grafana/grafana/issues/14629" target="_blank" rel="noopener">github.com/grafana/grafana/issues/14629</a></b><br />사진에 HTTP 안에 Access 방식을 Browser로 변경하고, 주소는 http://localhost:9090으로 변경</li>
+</ul>
+<p>마지막으로 마음에 드는 대시보드를 찾아 import 해주도록 하겠습니다. 대시보드 리스트는 여기서 확인할 수 있습니다.</p>
+<p><a href="https://grafana.com/grafana/dashboards" target="_blank" rel="noopener">grafana.com/grafana/dashboards</a></p>
+<figure id="og_1615102337703" contenteditable="false" data-ke-type="opengraph" data-og-type="website" data-og-title="Grafana Dashboards - discover and share dashboards for Grafana." data-og-description="Grafana.com provides a central repository where the community can come together to discover and share dashboards." data-og-host="grafana.com" data-og-source-url="https://grafana.com/grafana/dashboards" data-og-url="https://grafana.com/grafana/dashboards" data-og-image="https://blog.kakaocdn.net/dna/5xlf9/hyJtEFCJYn/AAAAAAAAAAAAAAAAAAAAAMV0G9KK8AOm_GosxU_Y6jl3A-NoEI-n_N6uNyeWWW-8/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=C3EardDlmrqq2l3qE6MnA6C8sZo%3D"><a href="https://grafana.com/grafana/dashboards" target="_blank" rel="noopener" data-source-url="https://grafana.com/grafana/dashboards">
+<div class="og-image" style="background-image: url('https://blog.kakaocdn.net/dna/5xlf9/hyJtEFCJYn/AAAAAAAAAAAAAAAAAAAAAMV0G9KK8AOm_GosxU_Y6jl3A-NoEI-n_N6uNyeWWW-8/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=C3EardDlmrqq2l3qE6MnA6C8sZo%3D');">&nbsp;</div>
+<div class="og-text">
+<p class="og-title">Grafana Dashboards - discover and share dashboards for Grafana.</p>
+<p class="og-desc">Grafana.com provides a central repository where the community can come together to discover and share dashboards.</p>
+<p class="og-host">grafana.com</p>
+</div>
+</a></figure>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/330/10.png" data-phocus="/assets/posts/330/10.png"><img src="/assets/posts/330/10.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span></figure>
+</p>
+<p>원하는 대시보드를 찾았으면 <b>Get this dashboard에</b> 있는 숫자를 복사한 뒤 Grafana에 Import 해줍니다.</p>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/330/11.png" data-phocus="/assets/posts/330/11.png" data-alt="Dashboard Import"><img src="/assets/posts/330/11.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span><figcaption>Dashboard Import</figcaption>
+</figure>
+<figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/330/12.png" data-phocus="/assets/posts/330/12.png"><img src="/assets/posts/330/12.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span></figure>
+</p>
+<h2 data-ke-size="size26">Reference<span style="letter-spacing: 0px;"></span></h2>
+<p>- <a href="http://blog.marcnuri.com/prometheus-grafana-setup-minikube/" target="_blank" rel="noopener">blog.marcnuri.com/prometheus-grafana-setup-minikube/</a>&nbsp;</p>
+<p>- <a href="http://medium.com/connectfit/prometheus-%EC%8B%A4%EB%AC%B4-%EC%A0%81%EC%9A%A9%EA%B8%B0-968715e983e2" target="_blank" rel="noopener">connectfit 기술블로그</a></p>
+<p>- <a href="http://prometheus.io/docs/practices/pushing/" target="_blank" rel="noopener">push-gateway</a></p>
+<p>- <a href="https://medium.com/finda-tech/prometheus%EB%9E%80-cf52c9a8785f" target="_blank" rel="noopener">FINDA 기술블로그</a></p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<h2 data-ke-size="size26">마무리</h2>
+<p>minikube 환경에서 Prometheus + Grafana를 이용하여 minikube cluster의 지표를 추출하여 시각화까지 진행해보았습니다.</p>
+<p>Helm이 없었다면 설치 과정이 꽤나 번거로운 작업이지만 Helm이 있어 정말 간단하게 설치할 수 있었습니다.</p>
+<p>진행하는 프로젝트에 모니터링을 도입하기 전에 간단하게 설치해보고 알아보면서 작성한 글이기 때문에 깊은 내용은 다루지 못하였습니다.</p>
+<p>프로젝트를 진행하면서 커스텀하게 쿼리를 작성한다던가 alerts, targets, PV 등 추가로 알게 되는 내용이 있다면 정리하여 2편을 작성해보도록 하겠습니다.</p>
+<p>&nbsp;</p>
+<p>글 내용에 대한 피드백이나 잘못된 부분이 있으면 댓글로 알려주시면 감사하겠습니다.</p>
+<p>&nbsp;</p></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/330">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

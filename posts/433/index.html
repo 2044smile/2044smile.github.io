@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Elemental MediaConvert 사용기 with FastAPI, S3 Presigned URL — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/433">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>Elemental MediaConvert 사용기 with FastAPI, S3 Presigned URL</h1>
+  <div class="meta"><span class="cat">DevOps</span> · 2025-08-30</div>
+  <article>
+<p data-ke-size="size16"><span >&nbsp;안녕하세요.</span></p>
+<p data-ke-size="size16"><span >사이드 프로젝트로 챌린지 관련 프로젝트를 진행하고 있습니다.</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >사용자들은 챌린지를 수행했다는 인증 영상을 촬영해서 업로드하고, 관리자는 그 영상을 보고 승인 여부를 기록 합니다.</span></p>
+<p data-ke-size="size16"><span >여기서 든 생각은 사용자들은 갤럭시, 아이폰 등을 사용하여 영상을 촬영할 것이고, 촬영한 영상을 업로드 한다면 보통 4K 30~60fps, HEVC(H.265)로 S3에 저장될 것 입니다. 스토리지 비용이 많이 발생할 것으로 생각되어 많은 고민을 한 결과 MediaConvert를 이용해서 트랜스코딩 해서 영상 화질과 비트레이트를 낮추는 걸로 결정했습니다.</span></p>
+<h3 data-ke-size="size23"><span >Media Convert란?</span></h3>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >클라우드 기반 비디오 <span ><b>트랜스코딩</b></span>(Transcoding; 사이즈와 압축(Codec)) 서비스</span></li>
+<li><span >즉 ,한 가지 <span ><b>포맷의 영상 <span >&rarr; 다양한 포맷/코덱/해상도로 변환해주는 역할</span></b></span></span></li>
+<li><span >완전 관리형(Managed Service)이라서 직접 인프라나 인코더 장비를 운영할 필요 없음</span></li>
+</ul>
+<h4 data-ke-size="size20"><span >주요 기능</span></h4>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span >포맷 변환 (Transcoding)</span>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span >입력: MP4, MOV, MPEG-TS 등</span></li>
+<li><span >출력: H.264, H.265(HEVC), AV1, MPEG-2, VP9 등 다양한 코뎅</span></li>
+<li><span >해상도: 4K, 1080p, 720p, Adaptive Bitrate(ABR) 지원</span></li>
+</ol>
+</li>
+<li><span >오디오 채널</span>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span >오디오 채널 매핑, 다국어 트랙, Dolby Audio,&nbsp; AAC 등 지원</span></li>
+</ol>
+</li>
+<li><span >자막 처리</span>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span >자막(Closed Caption, Subtitles) 삽입 가능</span></li>
+</ol>
+</li>
+<li><span >자동 스케일링</span>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span ><b>워크로드에 따라 자동으로 확장/축소 <span >&rarr; 인코딩 작업이 몰려도 안정적</span></b></span></li>
+</ol>
+</li>
+</ol>
+<h4 data-ke-size="size20"><span >비디오 파이프라인에서의 역할</span></h4>
+<blockquote data-ke-style="style2"><span >사이드 프로젝트에서 진행하는 파이프라인은 다음과 같다</span></blockquote>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span >사용자가 10초 이내 인증 영상을 S3(input_videos/&lt;user_id&gt;/&lt;yymmdd&gt;/&lt;uuid&gt;) 업로드</span></li>
+<li><span ><b>트랜스코딩(MediaConvert) <span >&rarr; 영상을 여러 해상도/코덱/포맷으로 변환</span></b></span>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span ><b><span >720p(720x480), bitrate 1500000, MPEG-4 AVC(H.264)</span></b></span></li>
+</ol>
+</li>
+<li><span >S3(output_videos/&lt;user_id&gt; /&lt;yymmdd&gt;/&lt;uuid&gt;) 저장</span></li>
+</ol>
+<h3 data-ke-size="size23"><span >FastAPI 로 구현</span></h3>
+<h4 data-ke-size="size20"><span >1. S3 서비스 만들기</span></h4>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="898" data-origin-height="808"><span data-url="/assets/posts/433/01.png" data-phocus="/assets/posts/433/01.png" data-alt="https://nueijeel.tistory.com/69"><img src="/assets/posts/433/01.png" loading="lazy" width="233" height="210" data-origin-width="898" data-origin-height="808"/></span><figcaption>https://nueijeel.tistory.com/69</figcaption>
+</figure>
+</p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >Presigned URL 생성하는 S3Service를 생성</span></li>
+<li><span >나중에 <span ><b>변환 작업을 요청할 때 필요한 object_key (S3 내 파일의 고유 주소)</b> </span>를 함께 반환합니다</span></li>
+</ul>
+<pre id="code_1756525595690" class="python" data-ke-language="python" data-ke-type="codeblock"><code># app/services/s3_service.py
+import boto3
+import uuid
+from typing import Dict
+from app.config import config
+from botocore.exceptions import NoCredentialsError
+
+
+class S3Service:
+	def __init(self, region_name: str = 'ap-northeast-2'):
+    	self.s3_client = boto3.client('s3', region_name=region_name)
+        self.bucket_name = config.STORAGE_BUCKET_NAME
+        self.storage_domain = config.STORAGE_DOMAIN
+        
+def generate_presigned_url(
+        self,
+        dir: str,
+        file_extension: str = "",
+        expiration: int = 300,
+        content_type: str = "application/octet-stream",
+    ) -&gt; dict[str, str]:
+    object_key = f"{dir}/{uuid.uuid4()}.{file_extension}"
+
+    try:
+        presigned_url = self.s3_client.generate_presigned_url(
+            "put_object",
+            Params={
+                "Bucket": self.bucket_name,
+                "Key": object_key,
+                "ContentType": content_type,
+            },
+            ExpiresIn=expiration,
+        )
+        return {
+            "upload_url": presigned_url,
+            "download_url": f"{self.storage_domain}/{object_key}",
+            "object_key": object_key,
+        }
+
+    except NoCredentialsError:
+        raise Exception("AWS credentials not available")</code></pre>
+<h4 data-ke-size="size20"><span >2. FastAPI 엔드포인트 구현</span></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >중요한 부분은&nbsp;&nbsp;&nbsp;# * 로 표시했습니다.</span></li>
+<li><span >서비스 리포지토리 패턴(Service-Repository Pattern) 계층형 구조</span>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >요청<span > &rarr; FastAPI&nbsp; (Schema로 Deserialization) <span >&rarr; Controller <span >&rarr; Service <span >&rarr; Repository</span></span></span></span></span></li>
+<li><span ><span ><span ><span >Repository <span >&rarr; Service <span >&rarr; Controller <span >&rarr; FastAPI (Schema로 Serialization) <span >&rarr; 응답</span></span></span></span></span></span></span></span></li>
+</ul>
+</li>
+</ul>
+<pre id="code_1756526214322" class="python" data-ke-language="python" data-ke-type="codeblock"><code># app/api/v1/endpoints/storage_controller.py
+from fastapi import APIRouter, Depends, Query, HTTPException, status, Body
+from pydantic import BaseModel, Field
+
+
+router = APIRouter(prefix="/storages", tags=["파일 업로드"])
+
+# 아래의 클래스는 schema에 위치해야 되지만 간단한 설명을 위해 여기 적음
+class UploadURLResponse(BaseModel):
+    upload_url: str = Field(..., description="파일을 업로드할 Presigned URL")
+    object_key: str = Field(..., description="업로드 완료 후 파일의 다운로드 URL")
+    download_url: str = Field(..., description="S3에 저장된 객체 키")
+    
+
+class ConversionRequest(BaseModel):
+    object_key: str = Field(..., description="S3에 업로드가 완료된 비디오의 객체 키")
+    
+  
+class ConversionResponse(BaseModel):
+    message: str = Field(..., description="작업 상태에 대한 메시지")
+    job_id: str = Field(..., description="생성된 AWS MediaConvert 작업의 고유 ID")
+    url: str = Field(..., description="변환이 완료된 MP4 파일의 최종 URL")
+    
+
+import logging
+from datetime import datetime
+from pathlib import Path
+from zoneinfo import ZoneInfo
+
+import boto3
+from botocore.exceptions import ClientError
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
+
+from app.api.v1.schemas.storage_schema import (
+    ConversionRequest,
+    ConversionResponse,
+    PresignedUrlResponse,
+)
+from app.config import config
+from app.config.get_current_user import get_current_user
+from app.services.s3_service import S3Service
+from app.utils.response_helper import create_response
+
+router = APIRouter()
+logger = logging.getLogger(__name__)
+
+mediaconvert_client = boto3.client(  # *
+    "mediaconvert",
+    region_name=config.AWS_REGION_NAME,
+    endpoint_url=config.AWS_MEDIACONVERT_ENDPOINT_URL,
+)
+
+
+@router.get("/upload_url", summary="파일 upload를 위한 Presigned URL 생성")
+def generate_presigned_url(
+    file_extension: str = Query(..., description="파일 확장자 (. 제외) eg) mp4, png"),
+    user_id: str = Depends(get_current_user),
+):
+    try:
+        if not file_extension:
+            return create_response(
+                {"error": "param is not valid."}, status.HTTP_400_BAD_REQUEST, "failed"
+            )
+
+        if file_extension == "png":
+            upload_dir = f"images/{user_id}"
+            content_type = "image/png"
+        elif file_extension == "mp4":
+            upload_dir = f"videos/input_videos/{user_id}"
+            content_type = "video/mp4"
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"지원하지 않는 파일 확장자입니다: '{file_extension}'. ('png', 또는 'mp4'만 가능)",
+            )
+
+        s3_service = S3Service()
+        presigned_url = s3_service.generate_presigned_url(
+            dir=upload_dir, file_extension=file_extension, content_type=content_type
+        )
+
+        return create_response(
+            PresignedUrlResponse(**presigned_url).model_dump(),
+            status.HTTP_200_OK,
+            "success",
+        )
+    except Exception as err:
+        return create_response(
+            {"error": str(err)}, status.HTTP_500_INTERNAL_SERVER_ERROR, "failed"
+        )
+
+
+@router.post(
+    "videos/start-conversion",
+    summary="S3 비디오 변환 작업 시작",
+    response_model=ConversionResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def start_video_conversion(
+    request: ConversionRequest = Body(...), user_id: str = Depends(get_current_user)
+):
+    """
+    프론트앤드에서 S3로 비디오 업로드가 완료된 후, 이 엔드포인트를 호출하여 MediaConvert 변환 작업을 시작합니다.
+    """
+    object_key = request.object_key
+
+    seoul_tz = ZoneInfo("Asia/Seoul")
+    now = datetime.now(tz=seoul_tz).strftime("%Y%m%d")
+
+    input_s3_path = f"s3://{config.STORAGE_BUCKET_NAME}/{object_key}"
+    output_key_prefix = f"videos/output_videos/{user_id}/{now}/"
+
+    try:
+        job_settings = {
+            "Role": config.AWS_MEDIACONVERT_ROLE_ARN,
+            "Settings": {
+                "Inputs": [
+                    {
+                        "FileInput": input_s3_path,
+                        "AudioSelectors": {
+                            "Audio Selector 1": {"DefaultSelection": "DEFAULT"}
+                        },
+                        "VideoSelector": {},
+                    }
+                ],
+                "OutputGroups": [
+                    {
+                        "Name": "File Group",
+                        "OutputGroupSettings": {
+                            "Type": "FILE_GROUP_SETTINGS",
+                            "FileGroupSettings": {
+                                "Destination": f"s3://{config.STORAGE_BUCKET_NAME}/{output_key_prefix}"
+                            },
+                        },
+                        "Outputs": [
+                            {
+                                "ContainerSettings": {"Container": "MP4"},
+                                "VideoDescription": {
+                                    "Width": 720,  # *
+                                    "Height": 480,  # *
+                                    "CodecSettings": {
+                                        "Codec": "H_264",  # *
+                                        "H264Settings": {
+                                            "MaxBitrate": 1500000,  # *
+                                            "RateControlMode": "QVBR",
+                                            "QualityTuningLevel": "SINGLE_PASS_HQ",
+                                            "FramerateControl": "SPECIFIED",
+                                            "FramerateNumerator": 24,
+                                            "FramerateDenominator": 1,
+                                        },
+                                    },
+                                },
+                                "AudioDescriptions": [
+                                    {
+                                        "AudioSourceName": "Audio Selector 1",
+                                        "CodecSettings": {
+                                            "Codec": "AAC",
+                                            "AacSettings": {
+                                                "Bitrate": 96000,
+                                                "CodingMode": "CODING_MODE_2_0",
+                                                "SampleRate": 48000,
+                                            },
+                                        },
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                ],
+            },
+        }
+
+        job_response = mediaconvert_client.create_job(**job_settings)
+        job_id = job_response["Job"]["Id"]
+
+    except ClientError as e:
+        logger.error(f"MediaConvert 작업 생성 실패: {e}")
+        raise HTTPException(
+            status_code=500, detail="영상 변환 작업 요청에 실패 했습니다."
+        )
+
+    filename = f"{Path(object_key).stem}.mp4"
+    url = f"{config.STORAGE_DOMAIN}/{output_key_prefix}{filename}"
+
+    # 사용자님의 스타일에 맞춰 create_response 헬퍼 사용
+    response_data = {
+        "message": "영상 변환 작업이 성공적으로 시작되었습니다.",
+        "job_id": job_id,
+        "url": url,
+    }
+    return create_response(
+        ConversionResponse(**response_data).model_dump(),
+        status.HTTP_202_ACCEPTED,
+        "success",
+    )</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<h4 data-ke-size="size20"><span ><b>3. Postman 테스트</b></span></h4>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="2789" data-origin-height="1438"><span data-url="/assets/posts/433/02.png" data-phocus="/assets/posts/433/02.png"><img src="/assets/posts/433/02.png" loading="lazy" width="2789" height="1438" data-origin-width="2789" data-origin-height="1438"/></span></figure>
+</p>
+<h4 data-ke-size="size20"><span ><b>1. Postman 테스트에서 나온 응답에 upload_url 복사</b></span></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >postman URL 에 붙여넣기</span></li>
+<li><span >Body <span >&rarr; binary 선택 후 mp4 파일 업로드</span></span></li>
+<li><span >Headers <span >&rarr; Content-Type=video/mp4 입력</span></span></li>
+</ul>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="1672" data-origin-height="448"><span data-url="/assets/posts/433/03.png" data-phocus="/assets/posts/433/03.png" data-alt="영상 업로드"><img src="/assets/posts/433/03.png" loading="lazy" width="1672" height="448" data-origin-width="1672" data-origin-height="448"/></span><figcaption>영상 업로드</figcaption>
+</figure>
+<figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="1134" data-origin-height="270"><span data-url="/assets/posts/433/04.png" data-phocus="/assets/posts/433/04.png" data-alt="Content-Type 설정"><img src="/assets/posts/433/04.png" loading="lazy" width="1134" height="270" data-origin-width="1134" data-origin-height="270"/></span><figcaption>Content-Type 설정</figcaption>
+</figure>
+<figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="150" data-origin-height="76"><span data-url="/assets/posts/433/05.png" data-phocus="/assets/posts/433/05.png" data-alt="성공"><img src="/assets/posts/433/05.png" loading="lazy" width="150" height="76" data-origin-width="150" data-origin-height="76"/></span><figcaption>성공</figcaption>
+</figure>
+</p>
+<h4 data-ke-size="size20"><span ><b>2. <b>Postman 테스트에서 나온 응답에 </b>object_key 복사</b></span></h4>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="2784" data-origin-height="1114"><span data-url="/assets/posts/433/06.png" data-phocus="/assets/posts/433/06.png" data-alt="성공"><img src="/assets/posts/433/06.png" loading="lazy" width="2784" height="1114" data-origin-width="2784" data-origin-height="1114"/></span><figcaption>성공</figcaption>
+</figure>
+</p>
+<h4 data-ke-size="size20"><span ><b>3. S3 업로드 확인</b></span></h4>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="2878" data-origin-height="810"><span data-url="/assets/posts/433/07.png" data-phocus="/assets/posts/433/07.png"><img src="/assets/posts/433/07.png" loading="lazy" width="2878" height="810" data-origin-width="2878" data-origin-height="810"/></span></figure>
+</p>
+<h3 data-ke-size="size23"><span >마무리</span></h3>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="1046" data-origin-height="996"><span data-url="/assets/posts/433/08.png" data-phocus="/assets/posts/433/08.png" data-alt="성공"><img src="/assets/posts/433/08.png" loading="lazy" width="1046" height="996" data-origin-width="1046" data-origin-height="996"/></span><figcaption>성공</figcaption>
+</figure>
+</p>
+<p data-ke-size="size16"><span >&nbsp;FastAPI, Presigned URL, MediaConvert 를 사용하여 영상을 원하는 해상도 및 비트레이트를 수정하여 저장하는 방법에 대해 알아봤습니다. 궁금한 점이나 더 설명이 필요하시면 댓글로 남겨주시면 감사하겠습니다.</span></p></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/433">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

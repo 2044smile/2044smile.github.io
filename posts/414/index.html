@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AWS 보안 그룹 default 사용 지양...왜? #1 — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/414">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>AWS 보안 그룹 default 사용 지양...왜? #1</h1>
+  <div class="meta"><span class="cat">DevOps</span> · 2024-01-24</div>
+  <article>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="864" data-origin-height="960"><span data-url="/assets/posts/414/01.png" data-phocus="/assets/posts/414/01.png" data-alt="https://aws-hyoh.tistory.com/72"><img src="/assets/posts/414/01.png" loading="lazy" width="864" height="960" data-origin-width="864" data-origin-height="960"/></span><figcaption>https://aws-hyoh.tistory.com/72</figcaption>
+</figure>
+</p>
+<p data-ke-size="size16"><span >&nbsp;안녕하세요.</span></p>
+<p data-ke-size="size16"><span >보안상 사용하지 말라는 default 에 대해서 알아보겠습니다.</span></p>
+<h3 data-ke-size="size23"><span ><b>보안그룹이란?</b></span></h3>
+<p data-ke-size="size16"><span >AWS 보안 그룹은 인스턴스 또는 리소스에 대한 인바운드 및 아웃바운드 트래픽을 제어하는 가상 방화벽 역할을 합니다. 그 중에서도 <b>'default'</b> 보안 그룹은 특정 보안 그룹이 지정되지 않은 경우 적용되는 기본 보안 그룹입니다.</span></p>
+<h4 data-ke-size="size20"><span ><b>default 특징</b></span></h4>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span ><b>전체 트래픽 허용</b>: 'default' 보안 그룹은 모든 인바운드 트래픽을 허용하고 모든 아웃바운드 트래픽을 허용합니다. <span ><b>즉, 인스턴스 간에 통신은 가능</b></span>하며, 외부와의 통신도 모든 포트로 허용됩니다.</span></li>
+<li><span ><b>자동 생성</b>: AWS 계정을 만들면 'default' 보안 그룹이 자동으로 생성되며 모든 EC2 인스턴스에 자동으로 할당됩니다.</span></li>
+<li><span ><b>수정 가능</b>:&nbsp; 'default' 보안 그룹은 수정 가능합니다. 따라서 필요한 경우 포트 및 규칙을 추가하거나 수정 할 수 있습니다.</span></li>
+<li><span ><b>삭제 불가능</b>: 'default' 보안 그룹은 삭제할 수 없습니다. 그러나 규칙을 변경하거나 수정할 수 있습니다.</span></li>
+<li><span ><b>초기 상태</b>: 'default' 보안 그룹의 초기 상태는 모든 인바운드 트래픽을 허용하고 모든 아웃바운드 트래픽을 허용하는 것 입니다.</span></li>
+</ol>
+<h4 data-ke-size="size20"><span ><b>default 장점</b></span></h4>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span >EC2 인스턴스가 'default' 보안 그룹을 사용하고 있다면, <span ><b>이 인스턴스는 같은 보안 그룹을 사용하는 다른 EC2 인스턴스와의 통신이 허용</b></span>됩니다.</span></li>
+<li><span >로드밸런서도 'default' 보안 그룹을 사용할 수 있으며, <span ><b>이 경우 로드 밸런서에 연결된 인스턴스와의 통신이 'default' 보안 그룹의 규칙에 따라 이루어집니다.</b></span></span></li>
+</ol>
+<h4 data-ke-size="size20"><span ><b>default 단점</b></span></h4>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span >실제 환경에서는 'default' 보안 그룹의 규칙을 신중하게 관리해야 하며, 보안 정책에 따라 필요한 포트 및 규칙을 추가하고 다른 서비스의 보안 그룹을 사용하는 것이 좋습니다.</span></li>
+<li><span ><b>모든 트래픽을 허용하도록 설정되어 있어 보안상 취약할 수 있습니다.</b></span></li>
+<li><span ><b>정확한 보안을 위해서는 필요한 규칙을 명시적으로 정의한 보안 그룹을 사용하는 것이 좋습니다.</b></span></li>
+</ol>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >&nbsp;다들 보안상의 이슈로 사용을 지양한다는 말이 많아서 왜 지양해야 할까?</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >보안상 문제를 제외하고 장점을 찾아보면 default 로 연결만 되어 있다면 </span></p>
+<p data-ke-size="size16"><span ><span ><b>Load Balancer to EC2 연결이 default 보안그룹 하나만으로 가능하다는 장점</b></span>이 있습니다.</span></p>
+<p data-ke-size="size16"><span >그 뿐만이 아닙니다. <span ><b>RDS to EC2 연결 또한 default 보안그룹으로 가능</b></span>합니다.</span></p>
+<p data-ke-size="size16"><span ><b>즉 VPC 내의 어떤 인스턴스던 간에 연결할 수 있는 것 입니다.</b></span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >보안적인 측면에서는 사용을 지양하는 게 맞습니다.</span></p>
+<p data-ke-size="size16"><span >하지만 보안상 이슈 없는 프로젝트에서는 default 를 사용해도 좋을 것 같습니다!</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >감사합니다.</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span ><a href="https://newbiecs.tistory.com/415" target="_blank" rel="noopener&nbsp;noreferrer">https://newbiecs.tistory.com/415</a></span></p>
+<figure id="og_1706150268729" contenteditable="false" data-ke-type="opengraph" data-ke-align="alignCenter" data-og-type="article" data-og-title="AWS 보안 그룹 default 를 이용해서 EC2 연결 #2" data-og-description="안녕하세요. https://newbiecs.tistory.com/414 AWS 보안 그룹 default 사용 지양...왜? #1 안녕하세요. 보안상 사용하지 말라는 default 에 대해서 알아보겠습니다. 보안그룹이란? AWS 보안 그룹은 인스턴스 또는 " data-og-host="newbiecs.tistory.com" data-og-source-url="https://newbiecs.tistory.com/415" data-og-url="https://newbiecs.tistory.com/415" data-og-image="https://blog.kakaocdn.net/dna/G4Hu9/hyU8PWYjlf/AAAAAAAAAAAAAAAAAAAAAKSwsklCst3DA43IMELhN7BE-AjHqKwyuTx8RojUX8re/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=GUvxlyp%2FO31Bihn3V6aglNme%2BnQ%3D"><a href="https://newbiecs.tistory.com/415" target="_blank" rel="noopener" data-source-url="https://newbiecs.tistory.com/415">
+<div class="og-image" style="background-image: url('https://blog.kakaocdn.net/dna/G4Hu9/hyU8PWYjlf/AAAAAAAAAAAAAAAAAAAAAKSwsklCst3DA43IMELhN7BE-AjHqKwyuTx8RojUX8re/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=GUvxlyp%2FO31Bihn3V6aglNme%2BnQ%3D');">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">AWS 보안 그룹 default 를 이용해서 EC2 연결 #2</p>
+<p class="og-desc" data-ke-size="size16">안녕하세요. https://newbiecs.tistory.com/414 AWS 보안 그룹 default 사용 지양...왜? #1 안녕하세요. 보안상 사용하지 말라는 default 에 대해서 알아보겠습니다. 보안그룹이란? AWS 보안 그룹은 인스턴스 또는</p>
+<p class="og-host" data-ke-size="size16">newbiecs.tistory.com</p>
+</div>
+</a></figure>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">&nbsp;</p></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/414">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

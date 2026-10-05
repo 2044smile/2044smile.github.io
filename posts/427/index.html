@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Django Celery, Rabbitmq 사용한 비동기 작업 처리 — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/427">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>Django Celery, Rabbitmq 사용한 비동기 작업 처리</h1>
+  <div class="meta"><span class="cat">Backend</span> · 2024-08-14</div>
+  <article>
+<p data-ke-size="size16"><span >&nbsp;안녕하세요.</span></p>
+<p data-ke-size="size16"><span >Rabbitmq 와 Celery 를 사용해서 프로젝트를 하나 만들어 보고 싶었고,</span></p>
+<p data-ke-size="size16"><span >ChatGPT 의 힘을 빌려 주제를 추천 받았고, 아래의 배송 서비스를 구현 해 봤습니다.</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span ><a  href="https://github.com/2044smile/shipment" target="_blank" rel="noopener&nbsp;noreferrer">https://github.com/2044smile/shipment</a></span></p>
+<figure id="og_1723530112105" contenteditable="false" data-ke-type="opengraph" data-ke-align="alignCenter" data-og-type="object" data-og-title="GitHub - 2044smile/shipment: python, django, rabbitmq, celery, drf, drf-simplejwt, swagger" data-og-description="python, django, rabbitmq, celery, drf, drf-simplejwt, swagger - 2044smile/shipment" data-og-host="github.com" data-og-source-url="https://github.com/2044smile/shipment" data-og-url="https://github.com/2044smile/shipment" data-og-image=""><a href="https://github.com/2044smile/shipment" target="_blank" rel="noopener" data-source-url="https://github.com/2044smile/shipment">
+<div class="og-image" style="background-image: url();">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">GitHub - 2044smile/shipment: python, django, rabbitmq, celery, drf, drf-simplejwt, swagger</p>
+<p class="og-desc" data-ke-size="size16">python, django, rabbitmq, celery, drf, drf-simplejwt, swagger - 2044smile/shipment</p>
+<p class="og-host" data-ke-size="size16">github.com</p>
+</div>
+</a></figure>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >간단히 프로젝트에 대한 소개를 드리자면,</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >카카오 로그인, djangorestframework-simplejwt 를 이용하여 토큰을 관리했고, 주문 서비스와 아이템(상품) 서비스를 구현하였습니다. <span ><i><b>rabbitmq 와 celery 를 사용하기 위해 docker-compose 를 사용</b></i></span> 했습니다.</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><u><span ><i><b> <span style="text-align: start;">Django와 Celery 를 사용하여 배송 상태를 관리하는 방법을 살펴 보겠습니다.</span> </b></i></span></u></p>
+<p data-ke-size="size16">&nbsp;</p>
+<h2 data-ke-size="size26"><span >Django 와 Celery, Rabbitmq 를 활용한 비동기 작업 처리: 배송 상태 업데이트</span></h2>
+<p data-ke-size="size16"><span >&nbsp;웹 애플리케이션에서 사용자 경험을 향상시키기 위해 동기 작업을 처리하는 것은 매우 중요합니다.</span></p>
+<p data-ke-size="size16"><span ><i><b>Django 와 Celery 를 사용하면 작업을 비동기적으로 처리하여 서버의 부하를 줄이고, 응답 속도를 개선할 수 있습니다.</b></i></span></p>
+<h3 data-ke-size="size23"><span >프로젝트 설정</span></h3>
+<h4 data-ke-size="size20"><span >Celery 설치</span></h4>
+<p data-ke-size="size16"><span >&nbsp;우선 Django 프로젝트에 Celery 를 설치합니다.</span></p>
+<p data-ke-size="size16"><span ><b><i>Celery 는 분산 작업 큐 로서, 작업을 비동기적으로 처리할 수있는 강력한 도구 입니다.&nbsp;</i></b></span></p>
+<pre id="code_1723531530006" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>pip install celery</code></pre>
+<h3 data-ke-size="size23"><span >settings.py 설정</span></h3>
+<p data-ke-size="size16"><span >&nbsp;<span ><i><b>Celery 와 RabbitMQ를 연동하기 위해 브로커 URL을 설정합니다.</b></i></span></span></p>
+<p data-ke-size="size16"><span >RabbitMQ 말고도 주로 비교되는 브로커는 Redis 가 있습니다.</span></p>
+<pre id="code_1723531877341" class="python" data-ke-language="python" data-ke-type="codeblock"><code># cofnig/settings.py
+
+INSTALLED_APPS = [
+    'celery',
+]
+
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+
+# RabbitMQ를 브로커로 사용
+CELERY_BROKER_URL = "amqp://guest:guest@rabbitmq:5672//"</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span ><i><b>`CELERY_TASK_TRACK_STARTED` 와 `CELERY_TASK_TIME_LIMIT` 설정을 통해</b></i></span></p>
+<p data-ke-size="size16"><span ><i><b>작업이 시작되었는지 추적하고, 작업의 최대 시간을 제한할 수 있습니다.</b></i></span></p>
+<h3 data-ke-size="size23"><span >Celery 설정 파일 생성</span></h3>
+<p data-ke-size="size16"><span >&nbsp;Django 와 Celery 를 통합하려면 Celery 설정 파일이 필요합니다.</span></p>
+<p data-ke-size="size16"><span >프로젝트의 <span ><i><b>config 디렉토리에 `celery.py` 파일을 생성</b></i></span>합니다.</span></p>
+<pre id="code_1723532013661" class="python" data-ke-language="python" data-ke-type="codeblock"><code># config/celery.py
+import os
+from celery import Celery
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+app = Celery("config")
+app.config_from_object('django.conf:settings', namespace='CELERY')
+app.autodiscover_tasks()  # Django 앱의 `tasks.py` 파일에서 Celery 작업을 자동으로 찾아줍니다.</code></pre>
+<h3 data-ke-size="size23"><span >Docker를 활용한 컨테이너화</span></h3>
+<p data-ke-size="size16"><span >&nbsp;<span ><i><b>Docker를 사용하면 Django 애플리케이션을 컨테이너로 패키징하여 일관된 개발 및 배포 환경을 제공</b></i></span>할 수 있습니다. </span><span >또한, <span ><i><b>Celery와 RabbitMQ를 컨테이너로 관리함으로써 비동기 작업 처리를 더욱 쉽게 구성</b></i></span>할 수 있습니다.</span></p>
+<p data-ke-size="size16"><span ><span ><i><b>`docker-compose.yaml`, `Dockerfile`</b></i></span> 을 설정하여 프로젝트를 컨테이너화 하는 방법을 살펴보겠습니다.</span></p>
+<h4 data-ke-size="size20"><span >docker-compose.yaml 파일</span></h4>
+<p data-ke-size="size16"><span >&nbsp;`docker-compose.yaml` 파일을 설정합니다.</span></p>
+<p data-ke-size="size16"><span >이 파일은 여러 컨테이너를 정의하고, 이들이 서로 어떻게 상호작용하는지 규정합니다.</span></p>
+<pre id="code_1723532541518" class="python" data-ke-language="python" data-ke-type="codeblock"><code># docker-compose.yaml
+version: '3'
+
+services:
+  app:
+    build:
+      context: .
+    ports:
+      -  "8000:8000"
+    volumes: # 옵션을 통해 로컬 파일 시스템을 컨테이너에 마운트하여 코드를 쉽게 업데이트 할 수 있습니다.
+      - .:/app
+    command: &gt;
+      sh -c "python manage.py runserver 0.0.0.0:8000"
+    depends_on:  # RabbitMQ 서비스가 시작된 후에 Django 앱이 시작되도록 합니다.
+      - rabbitmq
+    
+  rabbitmq:  # 메시지 브로커를 위한 서비스 입니다.
+    container_name: rabbitmq
+    image: rabbitmq:3.7-alpine  # alpine 이미지를 사용하여 경량화된 RabbitMQ 컨테이너를 실행
+    environment:
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+    ports:  # 포트를 외부(Django, Celery 에서 접근 가능)에 노출하여 브로커와 UI에 접근할 수 있습니다.
+      - "5672:5672" # RabbitMQ 기본 포트
+      - "15672:15672" # RabbitMQ 관리 UI 포트
+    expose:
+      - "15672"
+
+  celery:  # 워커
+    build:
+      context: .
+    volumes:
+      - .:/app
+    command: celery -A config worker --loglevel=DEBUG &amp; &gt; celery_log
+    depends_on:
+      - rabbitmq</code></pre>
+<h4 data-ke-size="size20"><span >Dockerfile 설정</span></h4>
+<p data-ke-size="size16"><span >&nbsp;Django 애플리케이션의 컨테이너 이미지를 빌드하는 데 사용 됩니다.</span></p>
+<p data-ke-size="size16"><span >이 파일은 애플리케이션의 종속성을 설치하고, 필요한 설정을 자동으로 처리합니다.</span></p>
+<pre id="code_1723532833167" class="python" data-ke-language="python" data-ke-type="codeblock"><code>FROM python:3.10-slim  # 경량화
+
+ENV PYTHONDONTWRITEBYTECODE 1  # .pyc 파일을 생성하지 않도록
+ENV PYTHONUNBUFFERED 1  # Python 출력이 즉시 표시되도록 설정
+
+WORKDIR /app
+
+COPY requirements.txt /app/
+RUN pip install -r requirements.txt
+
+COPY . /app/
+
+EXPOSE 8000  # 포트 8000을 외부에 노출
+
+CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]</code></pre>
+<pre id="code_1723533561456" class="python" data-ke-language="python" data-ke-type="codeblock"><code>docker-compose up</code></pre>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="2064" data-origin-height="783"><span data-url="/assets/posts/427/01.png" data-phocus="/assets/posts/427/01.png"><img src="/assets/posts/427/01.png" loading="lazy" width="2064" height="783" data-origin-width="2064" data-origin-height="783"/></span></figure>
+</p>
+<h3 data-ke-size="size23"><span >프로젝트 초기화 설정</span></h3>
+<p data-ke-size="size16"><span >&nbsp;<span ><i><b>Celery 가 Django 프로젝트와 함꼐 시작되도록 `__init__.py` 파일을 수정</b></i></span>합니다.</span></p>
+<pre id="code_1723532236754" class="python" data-ke-language="python" data-ke-type="codeblock"><code># config/__init__.py
+from .celery import app as celery_app
+
+
+__all__ = ['celery_app']</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >이제 Celery가 Django 프로젝트와 함께 실행될 준비가 되었습니다.</span></p>
+<h2 data-ke-size="size26"><span >비동기 작업 정의</span></h2>
+<p data-ke-size="size16"><span >&nbsp;<span ><i><b>배송 상태를 업데이트하는 비동기 작업을 정의</b></i></span>합니다.</span></p>
+<p data-ke-size="size16"><span >`tasks.py` 파일을 생성하고, Celery 작업을 작성합니다.</span></p>
+<pre id="code_1723532961850" class="python" data-ke-language="python" data-ke-type="codeblock"><code># app/tasks.py
+from config.celery import app
+from .models import Delivery
+
+@app.task
+def process_delivery_task(delivery_id):
+    instance = Delivery.objects.get(id=delivery_id)
+    instance.status = "2"  # 배송 완료 상태로 변경
+    instance.save()</code></pre>
+<h2 data-ke-size="size26"><span >비동기 작업 호출</span></h2>
+<p data-ke-size="size16"><span >&nbsp;<span ><i><b>`views.py` 에서 사용자가 배송을 출발할 때 비동기 작업을 호출하도록 설정</b></i></span>합니다.</span></p>
+<pre id="code_1723533016675" class="python" data-ke-language="python" data-ke-type="codeblock"><code># app/views.py
+class DeliveryViewSet(viewsets.ModelViewSet):
+    queryset = Delivery.objects.all()
+    serializer_class = DeliverySerializer
+    permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    @action(detail=True, methods=['GET'], name='departure')
+    def departure(self, request, pk=None):
+        instance = self.get_object()
+        if instance.status == '2':
+            return JsonResponse({'message': f'{instance.receiver.kakao_id} 고객님의 상품은 이미 배송이 완료 되었습니다.'})
+        instance.status = '1'
+        instance.save()
+
+        # celery 호출 / 시간은 60초로 설정
+        process_delivery_task.s(delivery_id=instance.id).apply_async(countdown=60)
+
+        return JsonResponse({'message': f'{instance.receiver.kakao_id} 고객님의 상품 {instance.order.item.name} 배송이 출발하였습니다. the delivery service will arrive in 60 seconds'})</code></pre>
+<h2 data-ke-size="size26"><span >결과 확인</span></h2>
+<p data-ke-size="size16"><span >&nbsp;자, 그럼 Celery 가 잘 동작 했는지 확인해볼까요?</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="1410" data-origin-height="806"><span data-url="/assets/posts/427/02.png" data-phocus="/assets/posts/427/02.png"><img src="/assets/posts/427/02.png" loading="lazy" width="1410" height="806" data-origin-width="1410" data-origin-height="806"/></span></figure>
+</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span ><span ><i><b> 비동기 작업 정의</b></i></span>에서 '2' 로 status 값을 변경 했었죠? </span></p>
+<p data-ke-size="size16"><span >정상적으로 값이 출력되는 것을 확인할 수 있습니다.</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="256" data-origin-height="32"><span data-url="/assets/posts/427/03.png" data-phocus="/assets/posts/427/03.png"><img src="/assets/posts/427/03.png" loading="lazy" width="256" height="32" data-origin-width="256" data-origin-height="32"/></span></figure>
+</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >celery 는 어떤 작업을 수행할까요?</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="801" data-origin-height="1011"><span data-url="/assets/posts/427/04.png" data-phocus="/assets/posts/427/04.png"><img src="/assets/posts/427/04.png" loading="lazy" width="801" height="1011" data-origin-width="801" data-origin-height="1011"/></span></figure>
+</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >보시면 TaskPool 이 생성되고, 제가 설정한 60초가 지나면 succeeded 되는 걸 확인할 수 있습니다.</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >Shipment 프로젝트에서 rabbitmq와 celery 를 사용해 봤습니다.</span></p>
+<p data-ke-size="size16"><span >질문이나 오타나 더 좋은 방법이 있으면 댓글로 알려주시면 감사합니다!</span></p></div>
+            
+
+
+
+
+
+
+
+
+
+<div data-tistory-react-app="NaverAd"></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/427">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

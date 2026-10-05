@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>[Django] GraphQL 기초 한 방 정리 — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/323">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>[Django] GraphQL 기초 한 방 정리</h1>
+  <div class="meta"><span class="cat">Backend</span> · 2020-12-12</div>
+  <article>
+<h2 data-ke-size="size26">목차</h2>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li>들어가기 전에</li>
+<li>GraphQL 정의</li>
+<li>GraphQL vs REST API<br />- GraphQL 장점<br />- GraphQL 단점</li>
+<li>Django에서 GraphQL 실습<br />- Schema<br />- resolver<br />- Query</li>
+</ul>
+<h2 data-ke-size="size26">들어가기 전에</h2>
+<p data-ke-size="size16">평소 Django를 사용하면서 RESTful API framework를 주로 사용해왔습니다.</p>
+<p data-ke-size="size16">그러던 중 최근 사이드 프로젝트를 진행하면서 GraphQL에 관심을 갖게 되어 찾아보게 되었습니다.&nbsp;GraphQL을 배우면 배울수록 RESTful API를 사용할 때는 몰랐던 불편한 점들이 하나둘씩 보이기 시작했습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">들어가기 전에 RESTful API에 대해 간단하게 알아보도록 하겠습니다.</p>
+<p data-ke-size="size16">REST API란 Web상에 HTTP 프로토콜을 활용한 Application Protocol Interface입니다.</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthContent" data-origin-width="0" data-origin-height="0"><span data-url="/assets/posts/323/01.png" data-phocus="/assets/posts/323/01.png" data-alt="출처:&amp;nbsp;https://www.seobility.net/en/wiki/REST_API"><img src="/assets/posts/323/01.png" loading="lazy" data-origin-width="0" data-origin-height="0"/></span><figcaption>출처:&nbsp;https://www.seobility.net/en/wiki/REST_API</figcaption>
+</figure>
+</p>
+<p data-ke-size="size16">1. 클라이언트 단에서 서버 단으로 어떠한 데이터 요청을 보내게 됩니다.</p>
+<p data-ke-size="size16">2. 서버 단에서는 클라이언트에서 접근할 수 있도록 URL 주소(Endpoint)를 열어놓게 됩니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">URL 경로로 요청을 보낼 때 어떻게 데이터 format은 어떻게 보내야 하는지, 서버 단에서는 응답을 보낼 때 어떤 식으로 데이터 format 응답을 보낼 것인지를 보내주는지 만들어놓은 것을 RESTful API라고 합니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">GraphQL에 대해 알아보고, Django에서 GraphQL 사용방법에 대해서 알아보도록 하겠습니다.</p>
+<h2 data-ke-size="size26">GraphQL 정의</h2>
+<p data-ke-size="size16"><b>GraphQL은 쿼리 언어</b>입니다. 여기서 말하는 쿼리 언어는 우리가 흔히 알고 있는 SQL 같은 쿼리 언어라는 것입니다.</p>
+<p data-ke-size="size16">같은 쿼리 언어라고 해서 GraphQL이 데이터베이스에서 데이터를 가져오는 언어라는 의미는 아닙니다.</p>
+<p data-ke-size="size16"><span >GraphQL은&nbsp;</span>웹 클라이언트에서 데이터를 효과적으로 가져오는 것이 주목적입니다. 그래서 GraphQL은 클라이언트 시스템에서 주로 작성되고 호출됩니다. 예를 들면 Vue.js 와 Django 간 API 통신을 한다고 하였을 때 GraphQL이 작성되는 곳은 Vue.js(웹 클라이언트)측입니다.</p>
+<h2 data-ke-size="size26">GraphQL vs REST API</h2>
+<p data-ke-size="size16"><span>REST API는 URL, METHOD 등을 조합하기 때문에 다양한 Endpoint가 존재합니다. 반면, gql은 단 하나의 Endpoint가 존재합니다. 또한, gql API에서는 불러오는 데이터의 종류를 쿼리 조합을 통해서 결정합니다. 예를 들면, <b>REST API에서는 각 Endpoint마다 데이터베이스 SQL 쿼리가 달라지는 반면, gql API는 gql 스키마의 타입마다 데이터베이스 SQL 쿼리가 달라집니다.</b></span></p>
+<h3 data-ke-size="size23">GraphQL의 장점</h3>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><b>엔트포인트가 한 개다.</b><br />REST API의 엔드포인트는 만드는 사람의 구조에 따라 달라질 수는 있지만 크게 기능 별로 엔드포인트를 만들게 됩니다.<br />유저와 게시글이라는 기능이 있다면 /users, /posts라는 엔드포인트가 생기게 되는 것이죠. 하지만 GraphQL의 경우에는 /graphql이라는 엔드포인트 하나만 있으면 됩니다.</li>
+<li><b>한 번의 요청으로 내가 원하는 데이터를 가져올 수 있다.</b><br />smile이라는 유저가 작성한 게시글을 가져오고 싶다면 백엔드 개발자에게 엔드포인트를 하나 만들어 달라고 하거나, 프론트 개발자가 /users, /posts에 요청을 보내서 데이터를 받은 뒤 데이터를 가공하여 사용할 수 있습니다. 하지만 GraphQL은 한 번의 요청에 내가 받고자 하는 데이터를 쿼리로 작성하여 요청을 보내면 내가 원하는 데이터를 받을 수 있습니다.<br /><b>서버 수정 없이 클라이언트가 원하는 쿼리를 날릴 수 있어 API를 설계하거나 변경하는 비용을 낮출 수 있습니다.</b></li>
+<li><b>인트로스팩션(introspection) 기능</b><br /><span style="letter-spacing: 0px;">기존 서버-클라이언트 협업 방식에서는 연동 규격서라고 하는 <b>API 명세서를 주고받는 절차</b>가 반드시 필요했습니다. 프로젝트 관리 측면에서 관리해야 할 대상의 증가는 작업의 복잡성 및 효율성 저해를 의미합니다. 이 API 명세서는 때때로 관리가 제대로 되지 않아, 인터페이스 변경 사항을 제때 문서에 반영하지 못하기도 하고, 제 타이밍에 전달 못하곤 합니다.<br /></span><span style="letter-spacing: 0px;">이러한 REST의 API 명세서 공유와 같은 문제를 해결하는 것이 gql의 인트로스펙션 기능입니다. <b>gql의 인트로스펙션은 서버 자체에서 현재 서버에 정의된 스키마의 실시간 정보를 공유를 할 수 있게 합니다.</b> 이 스키마 정보만 알고 있으면 클라이언트 사이드에서는 따로 연동 규격서를 요청할 필요가 없게 됩니다. 클라이언트 사이드에서는 실시간으로 현재 서버에서 정의하고 있는 스키마를 의심할 필요 없이 받아들이고, 그에 맞게 쿼리문을 작성하면 됩니다<br /><br /></span><span style="letter-spacing: 0px;">이 말은 즉, 프론트엔드 개발자와 백엔드 개발자 간에 커뮤니케이션이 줄어들면서 생산성이 높아지게 된다는 것을 의미합니다.<i></i></span><i></i></li>
+</ol>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthContent" data-origin-width="0" data-origin-height="0"><span data-url="/assets/posts/323/02.png" data-phocus="/assets/posts/323/02.png" data-alt="Django GraphQL 라이브러리에서 제공해주는 인트로스팩션 페이지"><img src="/assets/posts/323/02.png" loading="lazy" width="690" data-origin-width="0" data-origin-height="0"/></span><figcaption>Django GraphQL 라이브러리에서 제공해주는 인트로스팩션 페이지</figcaption>
+</figure>
+</p>
+<h3 data-ke-size="size23">GraphQL 단점</h3>
+<p data-ke-size="size16">GraphQL의 단점과 대안은 다른 블로그에서 너무나도 잘 설명해주셔서 자세한 설명은 <span ><b><a  href="https://www.bangseongbeom.com/graphql-downsides-alternatives.html" target="_blank" rel="noopener">링크</a></b></span>를 클릭하여 보시기 바랍니다.</p>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li>HTTP 캐싱 사용 불가능</li>
+<li>직접 구현해야 하는 파일 업로드</li>
+<li>요청 필터링의 어려움</li>
+</ol>
+<h2 data-ke-size="size26">Django에서 GraphQL 실습</h2>
+<p data-ke-size="size16"><b>graphene-django</b>를 사용하여 Django에서 GraphQL을 사용해보도록 하겠습니다.</p>
+<p data-ke-size="size16">실습 튜토리얼은 graphene-django에서 제공해주는 튜토리얼을 따라 진행하겠습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><a href="https://docs.graphene-python.org/projects/django/en/latest/tutorial-plain/#basic-tutorial" target="_blank" rel="noopener">docs.graphene-python.org/projects/django/en/latest/tutorial-plain/#basic-tutorial</a></p>
+<figure id="og_1607753471149" contenteditable="false" data-ke-type="opengraph" data-og-type="website" data-og-title="Graphene-Python" data-og-description="Basic Tutorial Graphene Django has a number of additional features that are designed to make working with Django easy. Our primary focus in this tutorial is to give a good understanding of how to connect models from Django ORM to Graphene object types. Set" data-og-host="docs.graphene-python.org" data-og-source-url="https://docs.graphene-python.org/projects/django/en/latest/tutorial-plain/#basic-tutorial" data-og-url="https://docs.graphene-python.org/projects/django/en/latest/tutorial-plain/#basic-tutorial" data-og-image=""><a href="https://docs.graphene-python.org/projects/django/en/latest/tutorial-plain/#basic-tutorial" target="_blank" rel="noopener" data-source-url="https://docs.graphene-python.org/projects/django/en/latest/tutorial-plain/#basic-tutorial">
+<div class="og-image" style="background-image: url();">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">Graphene-Python</p>
+<p class="og-desc" data-ke-size="size16">Basic Tutorial Graphene Django has a number of additional features that are designed to make working with Django easy. Our primary focus in this tutorial is to give a good understanding of how to connect models from Django ORM to Graphene object types. Set</p>
+<p class="og-host" data-ke-size="size16">docs.graphene-python.org</p>
+</div>
+</a></figure>
+<h3 data-ke-size="size23">Schema</h3>
+<p data-ke-size="size16">튜토리얼을 진행하다 보면 Schema를 생성하는 파트가 있습니다.</p>
+<p data-ke-size="size16">GraphQL Schema를 Django에서 사용하기 위해서는 schema.py에 graphene 라이브러리를 사용한 Schema가 정의되어야 합니다.</p>
+<p data-ke-size="size16">GraphQL을 사용한다는 것은 데이터의 관계를 그래프 형태로 나타낸다는 것입니다.</p>
+<pre id="code_1607755804514" class="python" data-ke-language="python" data-ke-type="codeblock"><code># cookbook/schema.py
+
+
+import graphene
+from graphene_django import DjangoObjectType
+
+from cookbook.ingredients.models import Category, Ingredient
+
+class CategoryType(DjangoObjectType):
+    class Meta:
+        model = Category  # Model
+        fields = ("id", "name", "ingredients")  # 보여질 Field를 지정
+
+class IngredientType(DjangoObjectType):
+    class Meta:
+        model = Ingredient
+        fields = ("id", "name", "notes", "category")
+
+# class Query를 통해서 데이터에 접근할 수 있습니다.
+class Query(graphene.ObjectType):
+    all_ingredients = graphene.List(IngredientType)
+    category_by_name = graphene.Field(CategoryType, name=graphene.String(required=True))
+
+    def resolve_all_ingredients(root, info):  # resolve_&lt;field_name&gt;
+        # We can easily optimize query count in the resolve method
+        return Ingredient.objects.select_related("category").all()
+
+    def resolve_category_by_name(root, info, name):
+        try:
+            return Category.objects.get(name=name)
+        except Category.DoesNotExist:
+            return None
+
+schema = graphene.Schema(query=Query)</code></pre>
+<p data-ke-size="size16">DjangoObjectType은 Django에서 생성된 모델을 ObjectType으로 변환시켜줍니다. 추가적으로 모델의 모든 필드를 보여주기 때문에 위 코드 블록처럼 fields를 지정하여 모델이 변경될 때 의도하지 않게 데이터가 노출될 가능성을 줄여주는 것이 좋습니다.</p>
+<h3 data-ke-size="size23">Resolvers</h3>
+<p data-ke-size="size16"><b>Schema 개체가 GraphQL 쿼리를 수신하면 관련된 Resolver에 매핑</b>합니다.</p>
+<p data-ke-size="size16">resolve_&lt;field_name&gt;으로 시작하는 메서드는 일치하는 필드로 자동으로 바인딩됩니다.</p>
+<p data-ke-size="size16"><span >resolve_&lt;field_name&gt;의 <b>인자에는 root, info, **args</b> 가 있습니다.</span></p>
+<ul style="list-style-type: circle;" data-ke-list-type="circle">
+<li><b>root</b>는 부모 resolver가 리턴한 객체를 가리킵니다.&nbsp;</li>
+<li><span style="letter-spacing: 0px;"><b>info</b>는 모든 resolve 메서드에 전달된 유용한 정보(context)가 있습니다.<br />info.context 속성은 Django 개발자에게 친숙한 HTTPRequest 객체입니다. 인증된 사용자 확인과 같은 resolve 메서드에서 Django의 HTTPRequest의 전체 기능이 제공됩니다.</span></li>
+<li><span style="letter-spacing: 0px;"><b>args</b>는 말 그대로 Argument입니다. 위 예시를 보시면 category_by_name에 끝에 name이라는 Args를 받고 있고, String데이터가 들어와야 되고, 항상 데이터를 넣어줘야 된다고 정의되어 있습니다. Query에서 작성 시에 넣어진 args는 resolve에서 받아 사용할 수 있습니다.</span></li>
+</ul>
+<h3 data-ke-size="size23">Query</h3>
+<p data-ke-size="size16">GraphQL은 쿼리 언어입니다. 우리는 아래와 같은 쿼리를 작성하여 원하는 데이터를 가져올 수 있습니다.</p>
+<pre id="code_1607758555230" class="python"  data-ke-language="python" data-ke-type="codeblock"><code>query {
+  allIngredients {
+    id
+    name
+  }
+}</code></pre>
+<p data-ke-size="size16">class Query에서 작성한 all_ingredients라는 필드를 camel Case로 변경하여 입력하겠습니다. 그 안에 어떤 필드의 값을 가져올지 명시하면 Ingredient 테이블에 있는 모든 id, name을 가져옵니다.</p>
+<pre id="code_1607758833797" class="python" data-ke-language="python" data-ke-type="codeblock"><code>{
+  "data": {
+    "allIngredients": [
+      {
+        "id": "1",
+        "name": "Eggs"
+      },
+      {
+        "id": "2",
+        "name": "Milk"
+      },
+      {
+        "id": "3",
+        "name": "Beef"
+      },
+      {
+        "id": "4",
+        "name": "Chicken"
+      }
+    ]
+  }
+}</code></pre>
+<p data-ke-size="size16">다음은 <b>ForeignKey</b>로 연결되어있는 데이터를 가져와보겠습니다.</p>
+<pre id="code_1607758922399" class="python" data-ke-language="python" data-ke-type="codeblock"><code>query {
+  categoryByName(name: "Dairy") {
+    id
+    name
+    ingredients {
+      id
+      name
+    }
+  }
+}</code></pre>
+<p data-ke-size="size16">argument로 name을 입력해주고, Category 테이블에 있는 id, name, ingredients를 출력하는데 ingredients는 ForeignKey로 연결되어 있기 때문에 ingredients 모델에서 id와 name을 가져오라는 쿼리가 만들어졌습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">출력 결과는 어떻게 나올까요?</p>
+<p data-ke-size="size16">Category의 name이 "Dairy"인 id와 name, ingredients 모델 안에 id, name이 출력될 것입니다.</p>
+<pre id="code_1607759131895" class="python" data-ke-language="python" data-ke-type="codeblock"><code>{
+  "data": {
+    "categoryByName": {
+      "id": "1",
+      "name": "Dairy",
+      "ingredients": [
+        {
+          "id": "1",
+          "name": "Eggs"
+        },
+        {
+          "id": "2",
+          "name": "Milk"
+        }
+      ]
+    }
+  }
+}</code></pre>
+<p data-ke-size="size16">공식 문서를 찾아보니 이 외에도 활용할 수 있는 방법이 정말 많습니다. 페이지 네이션을 사용할 수도 있고, Django의 get_queryset 메서드를 정의하여 Query 개체 수준 대신 ObjectType 수준에서 필터링을 사용할 수도 있고, django-filter를 사용하여 필드 별로 필터링을 사용할 수도 있습니다. 인증 관련해서는 django-greaphql-auth를 제공하여 JWT 토큰을 사용하여 Client의 접속을 JWT 토큰으로 관리할 수 있습니다.</p>
+<h2 data-ke-size="size26">마무리</h2>
+<p data-ke-size="size16">GraphQL을 사용한 경험이 아직 풍부하지 않아 글에서는 기본적인 내용만 다루었습니다.</p>
+<p data-ke-size="size16">백엔드 개발자 입장에서 GraphQL은 사용 안 할 이유가 없어 보였습니다. 자동으로 문서를 만들어주는 <b>인트로스팩션</b><b>&nbsp;</b>기능이 너무나도 유용해서 프론트엔드 개발자는 인트로스팩션으로 만들어진 Docs를 보면서 쿼리를 만들어 요청을 보내면 되니 백엔드 개발자로서는 기존에 엔드포인트를 하나 만들고, Swagger를 만들어서 format과 설명을 달아주는 작업이 사라지는 게 가장 큰 장점 같습니다.</p>
+<p data-ke-size="size16">앞으로 프로젝트를 진행하면서 페이지네이션과 JWT토큰, django-filter를 사용해보고 다음 편을 만들어보도록 하겠습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">감사합니다.</p>
+<h2 data-ke-size="size26">참고</h2>
+<p data-ke-size="size16">- <i><span><a href="https://tech.kakao.com/2019/08/01/graphql-basic/">tech.kakao.com/2019/08/01/graphql-basic/</a></span></i></p>
+<figure id="og_1607761483719" contenteditable="false" data-ke-type="opengraph" data-og-type="article" data-og-title="GraphQL 개념잡기" data-og-description="GraphQL은 페이스북에서 만든 쿼리 언어입니다. GrpahQL은 요즘 개발자들 사이에서 자주 입에 오르내리고 있으나, 2019년 7월 기준으로 얼리스테이지(early-stage)임은 분명합니다. 국내에서 GraphQL API를 O" data-og-host="tech.kakao.com" data-og-source-url="https://tech.kakao.com/2019/08/01/graphql-basic/" data-og-url="https://tech.kakao.com/2019/08/01/graphql-basic/" data-og-image="https://blog.kakaocdn.net/dna/DGTtL/hyIxfGcIT3/AAAAAAAAAAAAAAAAAAAAAJK0Zpm9muEAiu9Cl9zKtnSPsGztytotFMOXB2o_nP4A/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=XF3zA41WKKc%2FOP806lqQS%2B3evHQ%3D"><a href="https://tech.kakao.com/2019/08/01/graphql-basic/" target="_blank" rel="noopener" data-source-url="https://tech.kakao.com/2019/08/01/graphql-basic/">
+<div class="og-image" style="background-image: url('https://blog.kakaocdn.net/dna/DGTtL/hyIxfGcIT3/AAAAAAAAAAAAAAAAAAAAAJK0Zpm9muEAiu9Cl9zKtnSPsGztytotFMOXB2o_nP4A/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=XF3zA41WKKc%2FOP806lqQS%2B3evHQ%3D');">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">GraphQL 개념잡기</p>
+<p class="og-desc" data-ke-size="size16">GraphQL은 페이스북에서 만든 쿼리 언어입니다. GrpahQL은 요즘 개발자들 사이에서 자주 입에 오르내리고 있으나, 2019년 7월 기준으로 얼리스테이지(early-stage)임은 분명합니다. 국내에서 GraphQL API를 O</p>
+<p class="og-host" data-ke-size="size16">tech.kakao.com</p>
+</div>
+</a></figure>
+<p data-ke-size="size16">- <a href="https://docs.graphene-python.org/projects/django/en/latest/tutorial-plain/#basic-tutorial">docs.graphene-python.org/projects/django/en/latest/tutorial-plain/#basic-tutorial</a></p>
+<figure id="og_1607761486991" contenteditable="false" data-ke-type="opengraph" data-og-type="website" data-og-title="Graphene-Python" data-og-description="Basic Tutorial Graphene Django has a number of additional features that are designed to make working with Django easy. Our primary focus in this tutorial is to give a good understanding of how to connect models from Django ORM to Graphene object types. Set" data-og-host="docs.graphene-python.org" data-og-source-url="https://docs.graphene-python.org/projects/django/en/latest/tutorial-plain/#basic-tutorial" data-og-url="https://docs.graphene-python.org/projects/django/en/latest/tutorial-plain/#basic-tutorial" data-og-image=""><a href="https://docs.graphene-python.org/projects/django/en/latest/tutorial-plain/#basic-tutorial" target="_blank" rel="noopener" data-source-url="https://docs.graphene-python.org/projects/django/en/latest/tutorial-plain/#basic-tutorial">
+<div class="og-image" style="background-image: url();">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">Graphene-Python</p>
+<p class="og-desc" data-ke-size="size16">Basic Tutorial Graphene Django has a number of additional features that are designed to make working with Django easy. Our primary focus in this tutorial is to give a good understanding of how to connect models from Django ORM to Graphene object types. Set</p>
+<p class="og-host" data-ke-size="size16">docs.graphene-python.org</p>
+</div>
+</a></figure>
+<p data-ke-size="size16">- <a href="https://www.bangseongbeom.com/graphql-downsides-alternatives.html" target="_blank" rel="noopener">www.bangseongbeom.com/graphql-downsides-alternatives.html</a></p>
+<figure id="og_1607761498258" contenteditable="false" data-ke-type="opengraph" data-og-type="article" data-og-title="GraphQL의 단점과 대안" data-og-description="GraphQL(그래프QL)은 서버 수정 없이 클라이언트가 원하는 쿼리를 날릴 수 있어 API를 설계하거나 변경하는 비용을 획기적으로 낮출 수 있습니다. 그러나 HTTP에서 제공하는 기존 인프라를 그대로 사" data-og-host="www.bangseongbeom.com" data-og-source-url="https://www.bangseongbeom.com/graphql-downsides-alternatives.html" data-og-url="https://www.bangseongbeom.com/graphql-downsides-alternatives.html" data-og-image=""><a href="https://www.bangseongbeom.com/graphql-downsides-alternatives.html" target="_blank" rel="noopener" data-source-url="https://www.bangseongbeom.com/graphql-downsides-alternatives.html">
+<div class="og-image" style="background-image: url();">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">GraphQL의 단점과 대안</p>
+<p class="og-desc" data-ke-size="size16">GraphQL(그래프QL)은 서버 수정 없이 클라이언트가 원하는 쿼리를 날릴 수 있어 API를 설계하거나 변경하는 비용을 획기적으로 낮출 수 있습니다. 그러나 HTTP에서 제공하는 기존 인프라를 그대로 사</p>
+<p class="og-host" data-ke-size="size16">www.bangseongbeom.com</p>
+</div>
+</a></figure>
+<p data-ke-size="size16">&nbsp;</p></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/323">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

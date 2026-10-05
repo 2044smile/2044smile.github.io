@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Python - unittest Mock — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/262">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>Python - unittest Mock</h1>
+  <div class="meta"><span class="cat">Backend</span> · 2020-02-20</div>
+  <article>
+<h4 data-ke-size="size20"><b>파이썬 Mock 이란</b></h4>
+<p>&nbsp;</p>
+<p>TDD 에서 구현할 수 없는 데이터나 그 외 실제로 반영이 되면 안되는 것들을</p>
+<p>가짜로 생성하여 테스트를 진행하는 것 입니다.</p>
+<p>&nbsp;</p>
+<p>예를 들어 os.remove로 파일삭제하는 테스트를 구현했다고 하였을 때</p>
+<p>따로 TastCase의 SetUp, tearDown 사용하지 않을 시 실제 파일이 삭제된다고 가정을 해보겠습니다.</p>
+<p>&nbsp;</p>
+<p>테스트를 배포할 때 마다 진행하는데 첫 번째 테스트 때 A라는 파일이 삭제되었고,</p>
+<p>그 이후에 진행되는 테스트에서는 A라는 파일이 없기 때문에 테스트 결과가 제대로 나오지 않을 것 입니다.</p>
+<p>&nbsp;</p>
+<p>아래 코드를 보면 알 수 있듯이 Car 클래스의 name 은 'i30'이 리턴되어야 하지만</p>
+<p>mock의 MagicMock을 사용할 경우 내가 원하는 데이터를 지정(return_value='K5') 하였기 때문에</p>
+<p>함수를 찍어보면 반환되는 데이터가 변경된 것을 확인할 수 있다.</p>
+<pre id="code_1582189647784" class="python" data-ke-language="python" data-ke-type="codeblock"><code>from unittest.mock import MagicMock
+
+
+class Car:
+	def name(self):
+    		return 'i30'
+        
+c = Car()
+c.name()
+'i30'
+
+c.name = MagicMock(return_value='k5')
+c.name()
+'k5'
+</code></pre>
+<p style="font-size: 1.25em;" data-ke-size="size18">&nbsp;</p>
+<p style="font-size: 1.25em;" data-ke-size="size18"><b>@mock.patch('module path')</b></p>
+<p><b>[!] 모듈이 A라는 모듈이 B에서 import 되어 사용되고 있다면 B의 path를 입력하여 가져와야 합니다.</b></p>
+<p>&nbsp;</p>
+<pre id="code_1582264563772" class="python" data-ke-language="python" data-ke-type="codeblock"><code>@mock.patch('app.SendEmail.send')
+def mail_send(self, mock_email):
+    mock_email.retrun_value(True)
+ </code></pre>
+<p>app.SendEmail.send의 return을 이 테스트코드 안에서는 True로 명시하고 싶을 때 사용한다.</p>
+<p>&nbsp;</p>
+<pre id="code_1582264766579" class="python" data-ke-language="python" data-ke-type="codeblock"><code>import os
+
+def rm(filename):
+    os.remove(filename)
+
+=======================================================
+
+from mymodule import rm
+
+import mock
+import unittest
+
+class RmTestCase(unittest.TestCase):
+    
+    @mock.patch('mymodule.os')
+    def test_rm(self, mock_os):
+        rm("any path")
+        # test that rm called os.remove with the right parameters
+        mock_os.remove.assert_called_with("any path")</code></pre>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p><b>참조</b></p>
+<p><a href="https://www.toptal.com/python/an-introduction-to-mocking-in-python">https://www.toptal.com/python/an-introduction-to-mocking-in-python</a></p></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/262">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

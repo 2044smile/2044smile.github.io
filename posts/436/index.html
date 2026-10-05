@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>[Python] Iterator, Generator 정리 — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/436">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>[Python] Iterator, Generator 정리</h1>
+  <div class="meta"><span class="cat">Backend</span> · 2025-12-26</div>
+  <article>
+<p data-ke-size="size16"><span >들어가기 전에 파이썬에서 <span ><b>이터레이터(Iterator)는 데이터를 순차적으로 접근하는 객체</b></span>이고, <span ><b>제너레이터(Generator)는 이터레이터를 더 쉽게 만들어주는 함수(메서드)</b></span>인데, <span ><b>메모리 효율성과 지연 평가(Lazy Evalutation)가 핵심 사용 이유</b></span> 입니다. 특히 제너레이터는 거대한 데이터셋을 다룰 때 모든 데이터를 한 번에 메모리에 올리지 않고 필요할 때마다 하나씩 생성하여 반환하므로 메모리 사용량을 획기적으로 줄이고, 계산 비용을 낮추어 효율적인 프로그래밍을 가능하게 합니다.</span></p>
+<h3 data-ke-size="size23"><span >Iterator란 무엇인가?</span></h3>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="1258" data-origin-height="538"><span data-url="/assets/posts/436/01.png" data-phocus="/assets/posts/436/01.png" data-alt="https://www.naukri.com/code360/library/iterators-and-generators-in-python"><img src="/assets/posts/436/01.png" loading="lazy" width="1258" height="538" data-origin-width="1258" data-origin-height="538"/></span><figcaption>https://www.naukri.com/code360/library/iterators-and-generators-in-python</figcaption>
+</figure>
+</p>
+<h4 data-ke-size="size20"><span >개념</span></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >iterator는 순차적으로 값을 하나씩 반환하는 객체</span></li>
+</ul>
+<h4 data-ke-size="size20"><span >Iterator가 되기 위한 조건</span></h4>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span ><b>__iter__() 메서드: 자기 자신(iterator 객체)을 반환</b></span></li>
+<li><span ><b>__next__() 메서드: 다음 값을 반환하거나 StopIteration 예외 발생</b></span></li>
+</ol>
+<h4 data-ke-size="size20"><span >특징</span></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >반복&nbsp;가능한(iterable)&nbsp;객체로부터&nbsp;값을&nbsp;하나씩&nbsp;가져오는&nbsp;객체</span></li>
+<li><span >객체(리스트, 튜플 등)의 모든 요소를 순서대로 접근</span></li>
+<li><span >메모리 효율적</span></li>
+</ul>
+<h4 data-ke-size="size20"><span >기본 사용법</span></h4>
+<pre id="code_1766730435348" class="python" data-ke-language="python" data-ke-type="codeblock"><code>lst = [1,2,3]
+it = iter(lst)
+print(it)  # &lt;list_iterator object at ...&gt;
+
+print(next(it))  # 1
+print(next(it))  # 2
+print(next(it))  # 3
+# print(next(it))  # StopIteration 예외 발생
+# ---
+# for문의 실제 동작 방식
+while True:
+    try:
+    	print(next(something))
+    except StopIteration:
+    	break</code></pre>
+<h4 data-ke-size="size20"><span >반복 가능 객체 확인</span></h4>
+<pre id="code_1766730724553" class="python" data-ke-language="python" data-ke-type="codeblock"><code>t = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+print(hasattr(t, '__iter__'))  # True - 반복 가능 확인
+
+from collections import abc  # 객체가 어떤 &lsquo;자료구조적 행동&rsquo;을 하는지를 정의한 추상 인터페이스 모음
+print(isinstance(t, abc,Iterable))  # True - Iterable 상속 확인</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<h3 data-ke-size="size23"><span >Generator란 무엇인가?</span></h3>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="761" data-origin-height="561"><span data-url="/assets/posts/436/02.png" data-phocus="/assets/posts/436/02.png" data-alt="https://www.naukri.com/code360/library/iterators-and-generators-in-python"><img src="/assets/posts/436/02.png" loading="lazy" width="761" height="561" data-origin-width="761" data-origin-height="561"/></span><figcaption>https://www.naukri.com/code360/library/iterators-and-generators-in-python</figcaption>
+</figure>
+</p>
+<h4 data-ke-size="size20"><span >개념</span></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >yield 키워드를 사용하여 값을 하나씩 반환하는 특별한 함수</span>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><b><span > <span >호출될 때 제너레이터 객체의 인스턴스를 반환합니다</span></span></b></li>
+</ul>
+</li>
+<li><span >이 함수를 호출하면 Iterator 객체가 생성됨</span></li>
+</ul>
+<h4 data-ke-size="size20"><span >특징</span></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >__iter__, __next__를 만들 필요 없음(코드가 짧고 직관적) yield로 간단하게 작성</span></li>
+<li><span ><b>상태(state)를 자동으로 기억</b></span>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span ><b>yield에서 멈춘 시점의 지역 변수와 실행 위치를 다음 next() 호출까지 그대로 유지</b></span></li>
+</ul>
+</li>
+<li><span >메모리 절약</span>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >모든 데이터를 미리 생성하지 않고, next() 호출 시점에 데이터를 생성하므로 메모리 부담이 적음 (특히 빅데이터 처리)</span></li>
+</ul>
+</li>
+<li><span >지연 평가(Lazy Evalutaion)</span>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >필요한 시점에 값을 생성하여 계산 비용 절감</span></li>
+</ul>
+</li>
+</ul>
+<h4 data-ke-size="size20"><span >기본 사용법</span></h4>
+<pre id="code_1766731706606" class="python" data-ke-language="python" data-ke-type="codeblock"><code>def counter(max_num):
+    num = 0
+    while num &lt; max_num:
+        num += 1
+        yield num  # 값을 반환하고 일시정지(강제 중단)
+        
+
+for i in counter(3)
+    print(i)  # 출력: 1,2,3</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<h3 data-ke-size="size23"><span >Iterator vs Generator 비교</span></h3>
+<h4 data-ke-size="size20"><span >Iterator 직접 구현 방식</span></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >장점: 복잡한 로직 구현 가능</span></li>
+<li><span >단점: 코드 길고, 상태 관리 직접 해야 함</span></li>
+</ul>
+<pre id="code_1766732107952" class="python" data-ke-language="python" data-ke-type="codeblock"><code>class MyIterator:
+    def __init__(self):
+        self.data = [1,2,3]
+        self.index = 0
+        
+    def __iter__(self):
+        return self  # 자기 자신 반환
+        
+    def __next__(self):
+        if self.index &gt;= len(self.data):
+            raise StopIteration
+        value = self.data[self.index]
+        self.index += 1  # 상태 직접 관리
+        return value
+        
+mi = MyIterator()
+
+for i in mi:
+    print(i)  # 출력: 1,2,3</code></pre>
+<h4 data-ke-size="size20"><span >Generator yield 사용 방식</span></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span ><b>장점: 코드 간결, 상태 자동 관리, 메모리 효율</b></span></li>
+<li><span >단점: 한 방향으로만 순회 가능</span></li>
+</ul>
+<pre id="code_1766732456265" class="python" data-ke-language="python" data-ke-type="codeblock"><code>class MyGenerator:
+    def __init__(self):
+        self.data = [1,2,3]
+        
+    def __iter__(self):
+        for item in self.data:
+            yield item
+        # __next__는 Python이 자동 생성
+        
+        
+mg = MyGenerator()
+
+for i in mg:
+    print(i)  # 출력: 1,2,3</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<h3 data-ke-size="size23"><span >왜 사용해야 할까?</span></h3>
+<h4 data-ke-size="size20"><span ><b>1. 메모리 효율성</b></span></h4>
+<pre id="code_1766732724636" class="python" data-ke-language="python" data-ke-type="codeblock"><code># 리스트 전체를 메모리에 저장
+numbers = [i for i in range(1, 100000001)]
+total = sum(numbers)
+
+# 한 번에 하나씩만 생성
+# 표현식 for 변수 in iterator는 generator expression
+numbers = (i for i in range(1, 100000001))  
+total = sum(numbers)  # 거의 메모리 사용 안함
+
+# tip
+list: [표현식 for 변수 in iterator]
+generator: (표현식 for 변수 in iterator)
+tuple: {표현식 for 변수 in iterator}
+dict: {표현식: 변수 for 변수 in iterator}</code></pre>
+<h4  data-ke-size="size20"><span >2. 대용량 파일 처리</span></h4>
+<pre id="code_1766733542221" class="python" data-ke-language="python" data-ke-type="codeblock"><code># 리스트 방식
+with open('tim.txt', 'r') as f:
+    lines = f.readlines()  # 파일 전체를 리스트로! 메모리 부족 에러 가능
+    for line in lines:
+        process(line)
+        
+        
+# iterator 방식
+with open('tim.txt', 'r') as f:
+    for line in f:  # f는 iterator! 한 줄씩만 메모리에 올림
+        process(line)</code></pre>
+<h4 data-ke-size="size20"><span ><b>3. 지연 평가 (Lazy Evaluation) / 성능 향상</b></span></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >필요한 값까지만 계산 -&gt; 불필요한 연산 방지</span></li>
+<li><span >긴 시퀀스에서 일부만 사용할 때 매우 효율적</span></li>
+</ul>
+<pre id="code_1766734915040" class="python" data-ke-language="python" data-ke-type="codeblock"><code>def expensive_calculation():
+    print("계산 중...")
+    yield 1
+    yield 2
+    yield 3
+    
+gen = expensive_calculation()
+next(gen)</code></pre>
+<h3 data-ke-size="size23">결론</h3>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li>이터레이터는 데이터를 순차적으로 읽는 '원칙'</li>
+<li>제너레이터는 그 원칙을 <span ><b>메모리 효율적이고 간결하게 구현하는 방법</b></span></li>
+<li>큰 파일 처리, 무한 스트림, 머신러닝 데이터 로딩(e.g. PyTorch, DataLoader) 등에서 성능과 메모리 측면에서 압도적으로 유리하며 주로 제너레이터 방식(함수 또는 제너레이터 표현식)을 선호합니다.</li>
+</ul>
+<h3 data-ke-size="size23">참고</h3>
+<p data-ke-size="size16"><a href="https://stackoverflow.com/questions/2776829/difference-between-pythons-generators-and-iterators" target="_blank" rel="noopener&nbsp;noreferrer">https://stackoverflow.com/questions/2776829/difference-between-pythons-generators-and-iterators</a></p>
+<figure id="og_1766750431391" contenteditable="false" data-ke-type="opengraph" data-ke-align="alignCenter" data-og-type="website" data-og-title="Difference between Python's Generators and Iterators" data-og-description="What is the difference between iterators and generators? Some examples for when you would use each case would be helpful." data-og-host="stackoverflow.com" data-og-source-url="https://stackoverflow.com/questions/2776829/difference-between-pythons-generators-and-iterators" data-og-url="https://stackoverflow.com/questions/2776829/difference-between-pythons-generators-and-iterators" data-og-image="https://blog.kakaocdn.net/dna/gFAL2/hyZPWYxlTm/AAAAAAAAAAAAAAAAAAAAAMCELJPud36697kMVZTN55MQZ84TkBDSuJozRfn4-6J0/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=zVjXupoEdesyuUJLFKJIIa2NkT0%3D"><a href="https://stackoverflow.com/questions/2776829/difference-between-pythons-generators-and-iterators" target="_blank" rel="noopener" data-source-url="https://stackoverflow.com/questions/2776829/difference-between-pythons-generators-and-iterators">
+<div class="og-image" style="background-image: url('https://blog.kakaocdn.net/dna/gFAL2/hyZPWYxlTm/AAAAAAAAAAAAAAAAAAAAAMCELJPud36697kMVZTN55MQZ84TkBDSuJozRfn4-6J0/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=zVjXupoEdesyuUJLFKJIIa2NkT0%3D');">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">Difference between Python's Generators and Iterators</p>
+<p class="og-desc" data-ke-size="size16">What is the difference between iterators and generators? Some examples for when you would use each case would be helpful.</p>
+<p class="og-host" data-ke-size="size16">stackoverflow.com</p>
+</div>
+</a></figure>
+<p data-ke-size="size16">&nbsp;</p></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/436">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

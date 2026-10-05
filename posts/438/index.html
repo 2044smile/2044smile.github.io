@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FPS(Frame Per Second)란 — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/438">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>FPS(Frame Per Second)란</h1>
+  <div class="meta"><span class="cat">AI · Vision</span> · 2026-04-05</div>
+  <article>
+<h3 data-ke-size="size23"><span >FPS(Frame Per Second)</span></h3>
+<blockquote data-ke-style="style3"><span >초당 프레임 수. AI가 얼마나 자주 분석하냐를 결정</span></blockquote>
+<p data-ke-size="size16">&nbsp;</p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >FPS는 1초에 몇 장의 이미지를 처리하는지를 나타내는 단위다.</span></li>
+<li><span >30fps라면 1초에 30장의 사진을 연속으로 처리한다는 의미다.</span></li>
+<li><span >숫자가 높을수록 영상이 부드럽고 AI가 더 자주 분석할 수 있다.</span></li>
+</ul>
+<h4 data-ke-size="size20"><span >카메라 FPS, DeepStream 수신 FPS, AI 분석 FPS는 다르다</span></h4>
+<blockquote data-ke-style="style3"><span >아래에서는 이해를 쉽게 하기 위해 <b>AI 분석 FPS를 15fps</b>로 설정한 예시를 기준으로 설명한다.</span></blockquote>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="1464" data-origin-height="738"><span data-url="/assets/posts/438/01.png" data-phocus="/assets/posts/438/01.png"><img src="/assets/posts/438/01.png" loading="lazy" width="1464" height="738" data-origin-width="1464" data-origin-height="738"/></span></figure>
+</p>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span >카메라 촬영</span>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span >카메라는 설정된 FPS로 영상을 찍는다. 이 시점의 FPS가 가장 높다.</span></li>
+</ol>
+</li>
+<li><span ><b>듀얼스트림 분리</b></span>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span ><b>하나는 사용자 화면용으로 원본 30fps 그대로 화면에 뿌려진다.</b></span></li>
+<li><span ><b>다른 하나는 AI 분석용으로 15fps로 다운샘플링된 후 DeepStream으로 넘어간다.</b></span></li>
+<li><span >관제 요원이 보는 화면 품질에는 전혀 영향을 주지 않으면서 AI 분석 서버의 부하를 줄이는 구조다.</span></li>
+</ol>
+</li>
+<li><span ><b>interval 설정으로 추가 조절</b></span>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span >DeepStream에서는 interval 갑승로 실제 분석 빈도를 한 번 더 줄일 수 있다.</span></li>
+<li><span ><b>interval=N이면 N장을 건너뛰고 1장만 분석한다. 즉 (N+1)장 중 1장을 분석하는 셈이다</b></span></li>
+</ol>
+</li>
+</ol>
+<h4 data-ke-size="size20"><b><span >interval을 4로 설정하면 어떻게 되나?</span></b></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >카메라 원본은 30fps다.</span></li>
+<li><span ><b>DeepStream이 수신하는 FPS는 15fps로 절반이 된다.</b></span></li>
+<li><span ><b>여기에 interval=4를 적용하면 5장 중 1장만 분석하므로 실제 AI 분석 FPS는 3fps가 된다.</b></span></li>
+<li><span ><b>분석 간격으로 따지면 333ms마다 한 번씩 영상을 들여다보는 것이다. <b>1초에 3번 분석</b></b></span></li>
+</ul>
+<h4 data-ke-size="size20"><b><span >왜 FPS가 중요한가? (이벤트별로 권장 최소 AI 분석 FPS가 다른 이유)</span></b></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >낙상은 일반적으로 0.3초에서 0.5초 안에 완료된다.</span></li>
+<li><span >낙상이 시작되고 끝나는 시간과 분석 간격이 거의 같다.</span></li>
+<li><span >운이 나쁘면 낙상이 일어났다 끝난 후에야 프레임을 보게 되어 감지 자체가 불가능해진다.</span></li>
+<li><span ><b>interval=0으로 설정하면 DeepStream이 받는 15 FPS 그대로 전부 AI에 넘기고 15fps 그대로 분석하기에 1초에 15번 분석, 즉 정확도는 올라가지면 GPU 처리량은 5배 증가한다.</b></span></li>
+</ul>
+<p data-ke-size="size16">&nbsp;</p></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/438">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

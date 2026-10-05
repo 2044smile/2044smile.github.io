@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>탐구와 기록 — 이창석</title>
+  <meta name="description" content="Backend · DevOps · Vision AI 기술 글 모음 — 이창석의 블로그에서 골라 옮긴 광고 없는 글들">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0;
+      --blue: #9db8f0; --amber: #f0c176; --surface: #1b1f29; --border-strong: #333a48;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.8; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .mono { font-family: 'IBM Plex Mono', monospace; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; margin: 40px 0 8px; }
+    .sub { font-size: 14px; color: var(--muted); margin-bottom: 32px; }
+    .tabs { display: flex; gap: 22px; font-size: 14px; border-bottom: 1px solid var(--border); margin-bottom: 22px; }
+    .tab {
+      background: none; border: none; padding: 0 0 10px; cursor: pointer;
+      font-family: inherit; font-size: 14px; color: var(--muted);
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--accent); font-weight: 700; border-bottom-color: var(--accent); }
+    .posts { display: flex; flex-direction: column; }
+    .post { display: flex; gap: 18px; align-items: baseline; color: var(--text); padding: 13px 0; border-bottom: 1px solid var(--border); }
+    .post:hover .title { text-decoration: underline; }
+    .post:hover { color: var(--text); text-decoration: none; }
+    .post .cat { flex-shrink: 0; width: 86px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+    .cat-ai { color: var(--accent); }
+    .cat-devops { color: var(--blue); }
+    .cat-backend { color: var(--amber); }
+    .post .title { font-size: 15px; }
+    .post .date { margin-left: auto; flex-shrink: 0; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--faint); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+    @media (max-width: 640px) {
+      .post { flex-wrap: wrap; gap: 4px 14px; }
+      .post .cat { width: auto; font-size: 11px; }
+      .post .title { width: 100%; order: 2; }
+      .post .date { margin-left: 0; order: 1; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/">← 홈</a>
+    <a href="/" class="mono">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>탐구와 기록</h1>
+  <div class="sub">티스토리 블로그에서 골라 옮긴 기술 글 모음입니다 · <a href="https://newbiecs.tistory.com/">티스토리 전체 글 →</a></div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-cat="all">전체</button>
+    <button class="tab" data-cat="ai">AI · Vision</button>
+    <button class="tab" data-cat="devops">DevOps</button>
+    <button class="tab" data-cat="backend">Backend</button>
+  </div>
+
+  <div class="posts" id="posts"></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+<script>
+  const LABEL = { ai: 'AI', devops: 'DevOps', backend: 'Backend' };
+  fetch('/posts.json').then(r => r.json()).then(posts => {
+    const box = document.getElementById('posts');
+    box.innerHTML = posts.map(p => `
+      <a class="post" data-cat="${p.tab}" href="/posts/${p.id}/">
+        <span class="cat cat-${p.tab}">${LABEL[p.tab]}</span>
+        <span class="title">${p.title.replace(/</g, '&lt;')}</span>
+        <span class="date">${p.date}</span>
+      </a>`).join('');
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(tab => tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const cat = tab.dataset.cat;
+      document.querySelectorAll('.post').forEach(p => {
+        p.hidden = cat !== 'all' && p.dataset.cat !== cat;
+      });
+    }));
+  });
+</script>
+</body>
+</html>

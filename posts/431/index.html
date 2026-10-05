@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>[FastAPI] &#x27;Unknown Column&#x27; 에서 Alembic 사용법 (SQLAlchemy 스키마 동기화) — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/431">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>[FastAPI] &#x27;Unknown Column&#x27; 에서 Alembic 사용법 (SQLAlchemy 스키마 동기화)</h1>
+  <div class="meta"><span class="cat">Backend</span> · 2025-06-15</div>
+  <article>
+<p data-ke-size="size16">&nbsp;안녕하세요.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">FastAPI와 SQLAlchemy로 구현 된 서비스에서 코드를 수정하던 중 (pymysql.error.OperationalError) (1054, "Unknown column '..' in 'field list'") 오류와 그 해결 과정을 공유하려고 합니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">참고로 Django 개발자였고 Django 는 makemigrations, migrate 명령어로 DB 스키마 동기화가 편리했지만, FastAPI의 경우 처음 사용하는 웹 프레임워크이다 보니까 아무것도 모르는 상태에서 Alembic 을 발견 했습니다.</p>
+<h4 data-ke-size="size20">추측</h4>
+<p data-ke-size="size16">"FastAPI와 SQLAlchemy 로 AWS RDS 까지 구축된 상황에서 데이터베이스 스키마가 동기화가 안되어 있다" 라는 걸 봤을 때 전 개발자는 초기에 DB 를 개발하고 AWS RDS 를 만들어 한번 배포를 했을 겁니다. 하지만 배포하고 나서 DB 스키마는 수 많은 수정/삭제가 되었을 것이고, 그 결과 'Unknown Column' 에러가 발생하지 않았을까 싶습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<hr contenteditable="false" data-ke-type="horizontalRule" data-ke-style="style2" />
+<h2 data-ke-size="size26">문제</h2>
+<h4 data-ke-size="size20">코드와 현실(AWS RDS DB)의 불일치</h4>
+<pre id="code_1749974862815" class="python" data-ke-language="python" data-ke-type="codeblock"><code>class User(Base):
+    __tablename__ = 'users'
+    
+    # 새로 추가한 필드
+    point = Column(Numeric(10, 2), nullable=True, default=0.00, comment='보유중인 포인트')
+    # (pymysql.err.OperationalError) (1054, "Unknown column 'users.point' in 'field list'")</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">위 코드와 에러를 봤을 때 코드는 업데이트되었지만, 실제 데이터베이스는 DB 스키마 동기화가 안되고 있었습니다.</p>
+<h3 data-ke-size="size23">Alembic 이란?</h3>
+<p data-ke-size="size16">SQLAlchemy를 위한 데이터베이스 마이그레이션 도구입니다. SQLAlchemy 모델(코드)과 실제 데이터베이스 스키마를 비교하여, 그 차이점을 적용하는 SQL 스크립트를 자동으로 생성하고 실행해주는 도구</p>
+<h3 data-ke-size="size23">Alembic 도입 및 설정하기</h3>
+<h4 data-ke-size="size20">1. Alembic 설치</h4>
+<pre class="dockerfile" ><code>poetry add alembic</code></pre>
+<h4 data-ke-size="size20">2. Alembic 초기화</h4>
+<p data-ke-size="size16">프로젝트 최상위 디렉토리에서 아래 명령어를 실행하여 Alembic 설정 파일을 생성합니다.</p>
+<pre class="ebnf" ><code>alembic init alembic</code></pre>
+<p data-ke-size="size16">alembic.ini 파일과 alembic 디렉토리가 생성됩니다.</p>
+<h4 data-ke-size="size20">3. Alembic 설정 수정</h4>
+<p data-ke-size="size18">1) alembic.ini 파일 수정</p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li>DB 연결 정보</li>
+</ul>
+<pre class="ini"  data-ke-language="python"><code># alembic.ini
+
+[alembic]
+# ...
+script_location = alembic
+
+# sqlalchemy.url 값을 실제 DB URI로 교체합니다.
+# .env 파일에서 이 값을 관리하는 것이 좋습니다.
+sqlalchemy.url = mysql+pymysql://user:password@host/db_name</code></pre>
+<p data-ke-size="size18">2) alembic/env.py</p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li>모델 파일 수정</li>
+<li>어떤 모델의 변경사항을 추적해야 하는지 알려주고, 환경 변수를 읽을 수 있도록 설정합니다.</li>
+<li>from app.db.models.user import User 코드는 프로젝트의 모든 모델을 import 해주어야 Alembic이 인식합니다.</li>
+</ul>
+<pre id="code_1749976076625" class="python" data-ke-language="python" data-ke-type="codeblock"><code># alembic/env.py
+
+from logging.config import fileConfig
+from sqlalchemy import engine_from_config
+from sqlalchemy import pool
+from alembic import context
+
+# ==========================================================
+# [수정 1] 우리 프로젝트의 Base 객체와 모든 모델 클래스를 import
+# ==========================================================
+from app.config.db import Base
+# 아래에 프로젝트의 모든 모델을 import 해주어야 Alembic이 인식합니다.
+from app.db.models.user import User
+# ... (다른 모델들도 모두 추가)
+# ----------------------------------------------------------
+
+config = context.config
+
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
+
+# ==========================================================
+# [수정 2] target_metadata를 우리 프로젝트의 Base.metadata로 설정
+# ==========================================================
+# 원래: target_metadata = None
+# 수정 후:
+target_metadata = Base.metadata
+# ----------------------------------------------------------
+
+
+def run_migrations_online() -&gt; None:
+    # ... (이하 코드는 그대로)</code></pre>
+<h2 data-ke-size="size26">마이그레이션 실행</h2>
+<h3 data-ke-size="size23">4. 마이그레이션 스크립트 자동 생성</h3>
+<p data-ke-size="size16">터미널에서 아래 명령어를 실행하여 코드와 DB의 차이점을 감지하고, "작업 지시서"를 만듭니다.</p>
+<pre class="armasm" ><code>alembic revision --autogenerate -m "User 모델에 point 필드 등 추가"</code></pre>
+<p data-ke-size="size16">성공적으로 실행되면, 아래 메시지가 보입니다.</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="1098" data-origin-height="254"><span data-url="/assets/posts/431/01.png" data-phocus="/assets/posts/431/01.png"><img src="/assets/posts/431/01.png" loading="lazy" width="1098" height="254" data-origin-width="1098" data-origin-height="254"/></span></figure>
+</p>
+<pre class="routeros" ><code>INFO  [alembic.autogenerate.compare] Detected added column 'users.point'
+INFO  [alembic.autogenerate.compare] Detected added column 'users.total_challenge_amount'
+...
+Generating /path/to/project/alembic/versions/xxxx_...py ...  done</code></pre>
+<p data-ke-size="size16">Alembic이 users 테이블에 point 컬럼이 없다는 것을 정확히 찾았습니다.</p>
+<h3 data-ke-size="size23">5. 데이터베이스에 변경사항 적용</h3>
+<pre class="routeros" ><code>alembic upgrade head</code></pre>
+<p data-ke-size="size16">터미널에 Running upgrade ... 메시지가 뜨고, alembic/versions/...py 파일을 보면 아래 사진과 같이 업그레이드 및 다운그레이드 된 정보가 나와 있습니다.</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="1496" data-origin-height="1416"><span data-url="/assets/posts/431/02.png" data-phocus="/assets/posts/431/02.png"><img src="/assets/posts/431/02.png" loading="lazy" width="1496" height="1416" data-origin-width="1496" data-origin-height="1416"/></span></figure>
+</p>
+<p data-ke-size="size16">또 DB 툴로 users 테이블을 확인하면 스키마 동기화가 잘 된 것을 확인할 수 있습니다.</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="427" data-origin-height="82"><span data-url="/assets/posts/431/03.png" data-phocus="/assets/posts/431/03.png"><img src="/assets/posts/431/03.png" loading="lazy" width="427" height="82" data-origin-width="427" data-origin-height="82"/></span></figure>
+</p>
+<h2 data-ke-size="size26">결론</h2>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li>체계적인 DB 변경 이력 관리: alembic/versions 디렉토리에 모든 변경 이력이 코드로 남습니다.</li>
+<li>팀 협업 효율 증가: 누가 어떤 스키마를 변경했는지 명확하게 추적할 수 있습니다.</li>
+</ol>
+<p data-ke-size="size16">초기 설정이 번거로울 수 있지만, 한번 구축해두면 개발 경험의 질을 수직으로 상승시켜 줍니다. FastAPI와 SQLAlchemy를 사용하신다면, Alembic은 선택이 아닌 필수라고 말씀드리고 싶습니다.</p></div>
+            
+
+
+
+
+
+
+
+
+
+<div data-tistory-react-app="NaverAd"></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/431">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

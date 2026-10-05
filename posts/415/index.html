@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AWS 보안 그룹 default 를 이용해서 EC2 연결 #2 — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/415">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>AWS 보안 그룹 default 를 이용해서 EC2 연결 #2</h1>
+  <div class="meta"><span class="cat">DevOps</span> · 2024-01-25</div>
+  <article>
+<p data-ke-size="size16"><span >&nbsp;안녕하세요.</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span ><a  href="https://newbiecs.tistory.com/414" target="_blank" rel="noopener&nbsp;noreferrer">https://newbiecs.tistory.com/414</a></span></p>
+<figure id="og_1706148932448" contenteditable="false" data-ke-type="opengraph" data-ke-align="alignCenter" data-og-type="article" data-og-title="AWS 보안 그룹 default 사용 지양...왜? #1" data-og-description="안녕하세요. 보안상 사용하지 말라는 default 에 대해서 알아보겠습니다. 보안그룹이란? AWS 보안 그룹은 인스턴스 또는 리소스에 대한 인바운드 및 아웃바운드 트래픽을 제어하는 가상 방화벽 역" data-og-host="newbiecs.tistory.com" data-og-source-url="https://newbiecs.tistory.com/414" data-og-url="https://newbiecs.tistory.com/414" data-og-image="https://blog.kakaocdn.net/dna/bqEeuw/hyU8UxcEaj/AAAAAAAAAAAAAAAAAAAAAGl8LeNnVLpXnULNe5BMJX0w6U3n2zaKBiQl9zE1lsWC/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=qYtvQcHScGglAt7w8Gn%2F9boMXGA%3D"><a href="https://newbiecs.tistory.com/414" target="_blank" rel="noopener" data-source-url="https://newbiecs.tistory.com/414">
+<div class="og-image" style="background-image: url('https://blog.kakaocdn.net/dna/bqEeuw/hyU8UxcEaj/AAAAAAAAAAAAAAAAAAAAAGl8LeNnVLpXnULNe5BMJX0w6U3n2zaKBiQl9zE1lsWC/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=qYtvQcHScGglAt7w8Gn%2F9boMXGA%3D');">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">AWS 보안 그룹 default 사용 지양...왜? #1</p>
+<p class="og-desc" data-ke-size="size16">안녕하세요. 보안상 사용하지 말라는 default 에 대해서 알아보겠습니다. 보안그룹이란? AWS 보안 그룹은 인스턴스 또는 리소스에 대한 인바운드 및 아웃바운드 트래픽을 제어하는 가상 방화벽 역</p>
+<p class="og-host" data-ke-size="size16">newbiecs.tistory.com</p>
+</div>
+</a></figure>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >저번 글에서는 default 가 하는 역할이 뭔지</span></p>
+<p data-ke-size="size16"><span >그리고 단점만 있다는 것 보단 장점도 있다는 걸 알아봤습니다.</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span ><b>default 보안 그룹을 사용하여 배포한다는 건 사실 불가능 합니다.</b></span></p>
+<p data-ke-size="size16"><span >그 이유에 대해서 알아보고, 그럼 어떻게 하면 배포까지 연결할 수 있는지 알아보겠습니다.</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >이 글은 VPC 를 만들고, EC2 만드는 글들은 많기 때문에 보안 그룹 설정에 관한 것만 알아보겠습니다.</span></p>
+<h3 data-ke-size="size23"><b><span >EC2</span></b></h3>
+<p data-ke-size="size16"><span >EC2 인스턴스 이름은 tim-1, tim-2 로 만들었습니다.</span></p>
+<p data-ke-size="size16"><span >두 개로 구분한 이유는 로드밸런서를 사용할 것이기 때문에 그렇습니다.</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >그럼 보안그룹을 한번 살펴볼까요?</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-filename="보안그룹-1.png" data-origin-width="974" data-origin-height="616"><span data-url="/assets/posts/415/01.png" data-phocus="/assets/posts/415/01.png"><img src="/assets/posts/415/01.png" loading="lazy" width="974" height="616" data-filename="보안그룹-1.png" data-origin-width="974" data-origin-height="616"/></span></figure>
+</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >EC2를 만들면서 생성되어 있는 보안그룹이 없다면 보통 default 를 선택하곤 합니다.</span></p>
+<p data-ke-size="size16"><span ><b>그럼 default 만으로 EC2로 HTTP 요청을 보내면 받을 수 있을까요?</b></span></p>
+<p data-ke-size="size16"><span ><b>정답은 '아니요' 입니다.</b></span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >왜냐하면 사진에 보면 <span ><b>원본, 보안그룹</b></span>이 나와 있습니다.</span></p>
+<p data-ke-size="size16"><span >여기서 <span ><b>원본은 "VPC 내부의 것들에 대해서만 default 모든 인바운드 요청을 받겠다"</b> </span>입니다.</span></p>
+<p data-ke-size="size16"><span >즉 <span ><b>"외부에서 들어오는 것은 관여하지 않겠어"</b></span> 입니다.</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >그러면 80번 포트를 한번 열어보겠습니다.</span></p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-filename="보안그룹-2.png" data-origin-width="911" data-origin-height="220"><span data-url="/assets/posts/415/02.png" data-phocus="/assets/posts/415/02.png"><img src="/assets/posts/415/02.png" loading="lazy" width="911" height="220" data-filename="보안그룹-2.png" data-origin-width="911" data-origin-height="220"/></span></figure>
+<figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-filename="보안그룹-3.png" data-origin-width="1236" data-origin-height="1362"><span data-url="/assets/posts/415/03.png" data-phocus="/assets/posts/415/03.png"><img src="/assets/posts/415/03.png" loading="lazy" width="1236" height="1362" data-filename="보안그룹-3.png" data-origin-width="1236" data-origin-height="1362"/></span></figure>
+</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >위 사진은 제가 nginx 를 설치하고, 내부 index.html 을 변경 했습니다.</span></p>
+<p data-ke-size="size16"><span >그리고 공인 IP 가 보여야 되기 때문에 IP 도 가져왔습니다.</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">보안그룹을 80을 추가했더니 정상적으로 접속이 가능 합니다.</p>
+<p data-ke-size="size16"><span >즉 <span ><b>"default 는 VPC 내부의 것들만 소통이 가능하다. 외부에서 통신이 들어오게 설정하고 싶으면 너가 해"</b></span> 입니다.</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >오늘은 EC2 보안그룹 default 에 대해서 알아봤습니다.</span></p>
+<p data-ke-size="size16"><span >아직까지는 default 가 뭘 하는지 모를 수 있습니다.</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >다음 글에서 로드밸런서를 설정할 때 default 에 대한 이해가 되실 겁니다.</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >감사합니다!</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">&nbsp;</p></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/415">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

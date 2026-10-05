@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Django - RESTful 한 API 만들기 — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/271">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>Django - RESTful 한 API 만들기</h1>
+  <div class="meta"><span class="cat">Backend</span> · 2020-04-21</div>
+  <article>
+<p data-ke-size="size16"><b>안녕하세요.</b></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">평소 Django REST Framework를 이용하여 API를 만드는데</p>
+<p data-ke-size="size16">개념이 안잡혀있는 듯한 느낌이 강해서 한번 복습할 겸 내용을 정리해보려고 합니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">그 전에 간단하게 테스트할 수 있는 코드를 작성해보겠습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">api/ 폴더 안에 list.py를 생성해주겠습니다.</p>
+<p data-ke-size="size16"><b>list.py</b></p>
+<pre id="code_1587453363681" class="python" data-ke-language="python" data-ke-type="codeblock"><code>from django.views.generic import View
+from django.http.response import HttpResponse
+
+
+class PostListAPIView(View):
+
+    def get(self, request, *args, **kwargs)
+
+        return HttpResponse('Hello World')</code></pre>
+<p data-ke-size="size16"><b>urls.py</b></p>
+<pre id="code_1587453370696" class="python" data-ke-language="python" data-ke-type="codeblock"><code>urlpatterns = [
+    path('posts/', PostListAPIView.as_view(), name='list')
+]</code></pre>
+<p data-ke-size="size16">간단하게 /api/posts/ 라는 URL로 GET 요청 시 HttpResponse로 'Hello World' 가 출력되는 코드입니다.</p>
+<p data-ke-size="size16">보시면 View라는 것을 상속받아 사용하고 있습니다.</p>
+<pre id="code_1587453463887" class="python" data-ke-language="python" data-ke-type="codeblock"><code>def get(self, request, *args, **kwargs):
+	data = {
+    	"Hello": "World",
+    }
+    return HttpResponse(data)
+    
+ # 위와 같이 data를 HttpResponse로 넘겨주게 되면 우리가 원하는 값이 제대로 나오지 않습니다.
+ 
+ import json
+ 
+ 	return HttpResponse(
+    	json.dumps(data),  # json.dumps를 이용하면 Dict -&gt; Json으로 바뀐다.
+        content_type="application/json",
+    )
+    
+# 그렇다면 게시글의 목록들을 가져와서 데이터를 만들어보겠습니다.
+
+def get(self, request, *args, **kwargs):
+	data = [
+    	{
+            "title": post.title,
+            "content": post.content,
+            "youtube_original_url": post.url
+        }
+        for post in Post.objects.all()
+    ]
+    
+# 위와 같은 코드를 돌려보면 Post 객체 값이 들어가게 됩니다.
+</code></pre>
+<p data-ke-size="size16">위 코드에는 몇 가지 단점이 있습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">1. application/json -&gt; json 형식으로만 데이터를 받을 수 있습니다.&nbsp;</p>
+<p data-ke-size="size16">2. json을 serializer하고 deserializer 할 때 data를 수동으로 변경해줘야합니다.&nbsp;</p>
+<p data-ke-size="size16">&nbsp;</p>
+<h4 data-ke-size="size20"><b>Django Rest Framework</b></h4>
+<p data-ke-size="size16">- API 만드는데 최적화</p>
+<p data-ke-size="size16">- Django의 View 만큼이나 복잡하다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">pip install djangorestframework</p>
+<p data-ke-size="size16">INSTALLED_APPS = [ 'rest_framework' ]</p>
+<p data-ke-size="size16">&nbsp;</p>
+<pre id="code_1587455219888" class="python" data-ke-language="python" data-ke-type="codeblock"><code>from rest_framework.views import APIView
+from rest_framework.response import Response
+
+
+class PostListAPIView(APIView):
+	def get(self, request, *args, **kwargs):
+    	data = [
+    	{
+      	    "title": post.title,
+            "content": post.content,
+            "youtube_original_url": post.url
+        }
+        for post in Post.objects.all()
+    ]
+    return Response(data)</code></pre>
+<p data-ke-size="size16">APIView와 Response를 변경해주었는데 Django REST framework에서 기본적으로 제공해주는 템플릿이 생성되었고,</p>
+<p data-ke-size="size16">Postman으로 request 시 데이터도 정확히 잘 나오는 것을 확인할 수 있습니다.</p>
+<pre id="code_1587456362647" class="python" data-ke-language="python" data-ke-type="codeblock"><code>from rest_framework.generics import ListAPIView
+from posts.serializers import PostModelSerializer
+
+
+class PostListAPIView(ListAPIView):
+    queryset = Post.objects.all()
+
+# ListAPIView는 기본적으로 queryset or get_queryset, serializer_class 가 필요합니다.
+# serializers 폴더를 생성해주고, 안에 파일을 생성합니다.
+
+# serializers/post.py
+from rest_framework.serializer import serializer
+
+
+class PostModelSerializer(serializer.ModelSerializer):
+
+    username = serializers.CharField(source='user.username')  # user.username을 추가
+    
+    class Meta:
+    	model = Post
+        fields = ['title', 'content']</code></pre>
+<p data-ke-size="size16">위 코드로 실행하게 되면 Post 모델에 있는 fields에 지정한 필드들이 Serializer되어서 json 객체로 출력 됩니다.</p></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/271">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

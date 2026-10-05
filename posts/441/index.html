@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ONVIF XML과 SOAP에 대해서 알아보고 REST API와 비교 — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/441">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>ONVIF XML과 SOAP에 대해서 알아보고 REST API와 비교</h1>
+  <div class="meta"><span class="cat">AI · Vision</span> · 2026-05-28</div>
+  <article>
+<p data-ke-size="size16"><span ><a  href="https://newbiecs.tistory.com/440" target="_blank" rel="noopener&nbsp;noreferrer">https://newbiecs.tistory.com/440</a></span></p>
+<figure id="og_1779921618417" contenteditable="false" data-ke-type="opengraph" data-ke-align="alignCenter" data-og-type="article" data-og-title="ONVIF로 IP 카메라 설정 제어" data-og-description="IP 카메라를 코드로 제어하려면 ONVIF라는 표준 프로토콜을 이해해야 합니다. 이 글에서는 ONVIF의 기본 개념부터 Python으로 카메라의 인코더 설정을 조회하고 변경하는 방법까지 단계적으로 설명" data-og-host="newbiecs.tistory.com" data-og-source-url="https://newbiecs.tistory.com/440" data-og-url="https://newbiecs.tistory.com/440" data-og-image="https://blog.kakaocdn.net/dna/yzEHc/dJMb81fZegE/AAAAAAAAAAAAAAAAAAAAALi9CWE9JhtCJZawW40gGLmznT8Gu8DBeiJIHX1uY7XN/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=9aLZgrALLJJgfNJR8BpLFgbFCTw%3D"><a href="https://newbiecs.tistory.com/440" target="_blank" rel="noopener" data-source-url="https://newbiecs.tistory.com/440">
+<div class="og-image" style="background-image: url('https://blog.kakaocdn.net/dna/yzEHc/dJMb81fZegE/AAAAAAAAAAAAAAAAAAAAALi9CWE9JhtCJZawW40gGLmznT8Gu8DBeiJIHX1uY7XN/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=9aLZgrALLJJgfNJR8BpLFgbFCTw%3D');">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">ONVIF로 IP 카메라 설정 제어</p>
+<p class="og-desc" data-ke-size="size16">IP 카메라를 코드로 제어하려면 ONVIF라는 표준 프로토콜을 이해해야 합니다. 이 글에서는 ONVIF의 기본 개념부터 Python으로 카메라의 인코더 설정을 조회하고 변경하는 방법까지 단계적으로 설명</p>
+<p class="og-host" data-ke-size="size16">newbiecs.tistory.com</p>
+</div>
+</a></figure>
+<p data-ke-size="size16"><span >이전 게시글에서 간단히 XML과 SOAP에 대해서 간단히 설명했다.</span></p>
+<p data-ke-size="size16"><span >이 게시글에서는 XML과 SOAP 그리고 REST API와는 어떤 차이점이 있는지 살펴보자</span><span ></span></p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="893" data-origin-height="534"><span data-url="/assets/posts/441/01.png" data-phocus="/assets/posts/441/01.png"><img src="/assets/posts/441/01.png" loading="lazy" width="893" height="534" data-origin-width="893" data-origin-height="534"/></span></figure>
+</p>
+<h2 data-ke-size="size26"><span >1. XML과 SOAP</span></h2>
+<h3 data-ke-size="size23"><span >1.1 XML이란?</span></h3>
+<p data-ke-size="size16"><span ><b>XML(eXtensible Markup Language)은 데이터를 태그로 감싸서 표현하는 마크업 언어입니다.</b></span></p>
+<p data-ke-size="size16"><span >HTML과 생김새는 비슷하지만, HTML이 "어떻게 보여줄지"를 정의한다면 XML은 "데이터 구조"를 표현합니다.</span></p>
+<pre id="code_1779921894560" class="python" data-ke-language="python" data-ke-type="codeblock"><code>&lt;tt:Resolution&gt;
+    &lt;tt:Width&gt;3840&lt;/tt:Width&gt;
+    &lt;tt:Height&gt;2160&lt;/tt:Height&gt;
+&lt;/tt:Resolution&gt;</code></pre>
+<h4 data-ke-size="size20"><span >핵심 개념</span></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span ><b>태그(Tag): &lt;tt:Width&gt; 여는 태그, &lt;/tt:Width&gt; 닫는 태그 사이에 값이 들어갑니다.</b></span></li>
+<li><span ><b>트리 구조(Tree): 태그는 중첩이 가능하며, 이 계층 구조를 트리라고 합니다.</b></span></li>
+<li><span ><b>속성(Attribute): token="VideoEncoderToken-02-0" 처럼 태그 안에 부가 정보를 넣는 것입니다.</b></span></li>
+</ul>
+<h4 data-ke-size="size20"><span >XML 트리 구조 시각화</span></h4>
+<pre id="code_1779922713524" class="python" data-ke-language="python" data-ke-type="codeblock"><code>&lt;s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"&gt; # xmlns: SOAP 규칙(namespace)를 따른다
+  &lt;s:Header&gt;
+    &lt;wsse:Security&gt;
+      &lt;wsse:UsernameToken&gt;
+        &lt;wsse:Username&gt;admin&lt;/wsse:Username&gt;
+        &lt;wsse:Password&gt;p@ssw0rd&lt;/wsse:Password&gt;
+      &lt;/wsse:UsernameToken&gt;
+    &lt;/wsse:Security&gt;
+  &lt;/s:Header&gt;
+  &lt;s:Body&gt;
+    &lt;trt:GetVideoEncoderConfigurations/&gt;
+  &lt;/s:Body&gt;
+&lt;/s:Envelope&gt;
+---
+Envelope
+├── Header
+│   └── Security
+│       └── UsernameToken
+│           ├── Username  &rarr;  "admin"
+│           └── Password  &rarr;  "admin"
+└── Body
+    └── GetVideoEncoderConfigurations</code></pre>
+<h4 data-ke-size="size20"><b><span >Python에서 ElementTree로 파싱하면 이 트리를 그대로 탐색</span></b></h4>
+<pre id="code_1779923035532" class="python" data-ke-language="python" data-ke-type="codeblock"><code>import xml.etree.ElementTree as ET
+
+root = ET.fromstring(xml_string) # 루트 노드(Envelope) 반환
+
+# 트리 탐색: .// 는 하위 모든 노드에서 찾기
+username = root.find('.//wsse:Username', NS)
+print(username.text) # admin
+
+# 속성(attribute) 읽기
+config = root.find('.//trt:Configuration', NS)
+print(config.get('token')) # "VideoEncoderToken-02-0"</code></pre>
+<h3 data-ke-size="size23"><span >1.2 SOAP이란?</span></h3>
+<p data-ke-size="size16"><span ><b>SOAP(Simple Object Access Protocol)는 카메라 기능 호출 요청을 XML 형태로 만들어 HTTP로 전달하는 방식</b></span></p>
+<h4 data-ke-size="size20"><span >1.2.1 SOAP 메시지의 전체 구조: <span ><b>Envelope / Header / Body / Fault</b></span></span></h4>
+<p data-ke-size="size16"><span >SOAP 메시지는 크게 4가지 요소로 구성됩니다.</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size18"><span >1. Header (선택사항)</span></p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >인증 정보나 부가 메타데이터를 담습니다.</span></li>
+<li><span >카메라에 따라 생략 가능하지만, WS-Security 인증을 요구하는 카메라라면 반드시 포함</span></li>
+</ul>
+<pre id="code_1779924360730" class="python" data-ke-language="python" data-ke-type="codeblock"><code>&lt;s:Header&gt;
+  &lt;wsse:Security xmlns:wsse="http://schemas.xmlsoap.org/ws/2002/12/secext"&gt;
+    &lt;wsse:UsernameToken&gt;
+      &lt;wsse:Username&gt;admin&lt;/wsse:Username&gt;
+      &lt;wsse:Password Type="PasswordDigest"&gt;hashed_pw==&lt;/wsse:Password&gt;
+      &lt;wsse:Nonce&gt;base64_nonce==&lt;/wsse:Nonce&gt;
+      &lt;wsu:Created&gt;2026-05-20T00:00:00Z&lt;/wsu:Created&gt;
+    &lt;/wsse:UsernameToken&gt;
+  &lt;/wsse:Security&gt;
+&lt;/s:Header&gt;</code></pre>
+<blockquote data-ke-style="style2"><span ><b>PasswordDigest란 비밀번호를 평문으로 보내는 것이 아니라 SHA-1(Nonce + Created + Password)를 Base64로 인코딩해서 전송합니다. 매 요청마다 Nonce(일회성 난수)가 바뀌므로 리플레이 공격을 방어합니다.</b></span></blockquote>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size18"><span >2. Body (필수)</span></p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >실제 <span ><b>요청 함수(Get, Set)</b></span> 또는 응답 데이터가 들어갑니다.</span></li>
+</ul>
+<pre id="code_1779925118617" class="python" data-ke-language="python" data-ke-type="codeblock"><code>&lt;s:Body&gt;
+  &lt;trt:GetVideoEncoderConfiguration xmlns:trt="http://www.onvif.org/ver10/media/wsdl"&gt; # xmlns를 Envelope에 선언했다면 없어도 됨
+    &lt;trt:ConfigurationToken&gt;VideoEncoderToken-02-0&lt;/trt:ConfigurationToken&gt;
+  &lt;/trt:GetVideoEncoderConfiguration&gt;
+  &lt;trt:SetVideoEncoderConfiguration xmlns:trt="http://www.onvif.org/ver10/media/wsdl"&gt; # xmlns를 Envelope에 선언했다면 없어도 됨
+
+  &lt;trt:Configuration token="VideoEncoderToken-02-0"&gt;
+
+    &lt;tt:Name xmlns:tt="http://www.onvif.org/ver10/schema"&gt;
+      H264Config
+    &lt;/tt:Name&gt;
+
+    &lt;tt:UseCount xmlns:tt="http://www.onvif.org/ver10/schema"&gt;
+      1
+    &lt;/tt:UseCount&gt;
+
+    &lt;tt:Encoding xmlns:tt="http://www.onvif.org/ver10/schema"&gt;
+      H264
+    &lt;/tt:Encoding&gt;
+
+    &lt;tt:Resolution xmlns:tt="http://www.onvif.org/ver10/schema"&gt;
+      &lt;tt:Width&gt;1920&lt;/tt:Width&gt;
+      &lt;tt:Height&gt;1080&lt;/tt:Height&gt;
+    &lt;/tt:Resolution&gt;
+
+    &lt;tt:RateControl xmlns:tt="http://www.onvif.org/ver10/schema"&gt;
+      &lt;tt:FrameRateLimit&gt;30&lt;/tt:FrameRateLimit&gt;
+      &lt;tt:BitrateLimit&gt;4096&lt;/tt:BitrateLimit&gt;
+    &lt;/tt:RateControl&gt;
+
+  &lt;/trt:Configuration&gt;
+
+  &lt;trt:ForcePersistence&gt;true&lt;/trt:ForcePersistence&gt;
+
+  &lt;/trt:SetVideoEncoderConfiguration&gt;
+&lt;/s:Body&gt;</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size18"><span >3. Fault (오류 응답)</span></p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >요청이 실패했을 때 Body 안에 Fault 요소가 들어옵니다.</span></li>
+<li><span >HTTP의 4xx/5xx 상태 코드와 비슷한 역할입니다.</span></li>
+<li><span ><b>중요한 점은 SOAP Fault가 와도 HTTP 상태 코드는 보통 200 OK 입니다. Body를 파싱해야 오류를 알 수 있습니다.</b></span></li>
+</ul>
+<pre id="code_1779924623817" class="python" data-ke-language="python" data-ke-type="codeblock"><code>&lt;s:Body&gt;
+  &lt;s:Fault&gt;
+    &lt;s:Code&gt;
+      &lt;s:Value&gt;s:Sender&lt;/s:Value&gt; # 잘못된 요청 (클라이언트 잘못)
+      &lt;s:Subcode&gt;
+        &lt;s:Value&gt;ter:InvalidArgVal&lt;/s:Value&gt; # ONVIF 세부 오류 코드
+      &lt;/s:Subcode&gt;
+    &lt;/s:Code&gt;
+    &lt;s:Reason&gt;
+      &lt;s:Text&gt;The requested configuration token does not exist.&lt;/s:Text&gt;
+    &lt;/s:Reason&gt;
+  &lt;/s:Fault&gt;
+&lt;/s:Body&gt;</code></pre>
+<table style="border-collapse: collapse; width: 100%; height: 126px;" border="1" data-ke-align="alignLeft">
+<tbody>
+<tr style="height: 21px;">
+<td style="width: 26.7442%; height: 21px;"><span ><b>Fault Code</b></span></td>
+<td style="width: 73.2558%; height: 21px;"><span ><b>의미</b></span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="width: 26.7442%; height: 21px;"><span >s:Sender</span></td>
+<td style="width: 73.2558%; height: 21px;"><span >클라이언트(요청)가 잘못됨 - 잘못된 토큰, 파라미터 오류 등</span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="width: 26.7442%; height: 21px;"><span >s:Receiver</span></td>
+<td style="width: 73.2558%; height: 21px;"><span >서버(카메라)가 처리 못함 - 카메라 내부 오류</span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="width: 26.7442%; height: 21px;"><span >ter:InvalidArgVal</span></td>
+<td style="width: 73.2558%; height: 21px;"><span >잘못된 인자값</span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="width: 26.7442%; height: 21px;"><span >ter:NotAuthorized</span></td>
+<td style="width: 73.2558%; height: 21px;"><span >인증 실패</span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="width: 26.7442%; height: 21px;"><span >ter:ActionNotSupported</span></td>
+<td style="width: 73.2558%; height: 21px;"><span >해당 카메라가 이 기능을 지원하지 않음</span></td>
+</tr>
+</tbody>
+</table>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span ><b>그래서 SOAP 응답을 처리할 때는 반드시 Fault 여부를 먼저 확인해야 합니다.</b></span></p>
+<pre id="code_1779924831958" class="python" data-ke-language="python" data-ke-type="codeblock"><code>def parse_response(raw_xml: str):
+    root = ET.fromstring(raw_xml)
+
+    # Fault 먼저 확인 (HTTP 200이어도 Fault일 수 있음!)
+    fault = root.find('.//s:Fault', NS)
+    if fault is not None:
+        code = fault.findtext('.//s:Value', namespaces=NS)
+        reason = fault.findtext('.//s:Text', namespaces=NS)
+        raise ONVIFError(f"SOAP Fault [{code}]: {reason}")
+
+    # 정상 응답 처리
+    return root.find('.//trt:Configuration', NS)</code></pre>
+<h4 data-ke-size="size20"><span >1.2.2 REST API vs SOAP - 개발자 관점 비교</span></h4>
+<p data-ke-size="size16"><b><span >현대 개발에서 RST(JSON)가 지배적이지만, 산업용 장비&middot;금융&middot;의료 분야에서는 SOAP가 여전히 사용되고 있다.</span></b></p>
+<table style="border-collapse: collapse; width: 100%; height: 189px;" border="1" data-ke-align="alignLeft">
+<tbody>
+<tr style="height: 21px;">
+<td style="width: 19.7286%; height: 21px;"><span ><b>항목</b></span></td>
+<td style="width: 34.1473%; height: 21px;"><span ><b>REST</b></span></td>
+<td style="width: 46.124%; height: 21px;"><span ><b>SOAP</b></span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="width: 19.7286%; height: 21px;"><span ><b>데이터 형식</b></span></td>
+<td style="width: 34.1473%; height: 21px;"><span >JSON (또는 XML)</span></td>
+<td style="width: 46.124%; height: 21px;"><span >XML 고정</span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="width: 19.7286%; height: 21px;"><span ><b>전송 프로토콜</b></span></td>
+<td style="width: 34.1473%; height: 21px;"><b><span >HTTP (GET/POST/PUT/DELETE)</span></b></td>
+<td style="width: 46.124%; height: 21px;"><b><span >HTTP만 사용, 항상 POST</span></b></td>
+</tr>
+<tr style="height: 21px;">
+<td style="width: 19.7286%; height: 21px;"><span ><b>호출 방식</b></span></td>
+<td style="width: 34.1473%; height: 21px;"><b><span >리소스 중심 (/cameras/1/encoder)</span></b></td>
+<td style="width: 46.124%; height: 21px;"><b><span >함수 중심 (GetVideoEncoderConfiguration)</span></b></td>
+</tr>
+<tr style="height: 21px;">
+<td style="width: 19.7286%; height: 21px;"><span ><b>오류 처리</b></span></td>
+<td style="width: 34.1473%; height: 21px;"><span ><b>HTTP 상태 코드 (4xx, 5xx)</b></span></td>
+<td style="width: 46.124%; height: 21px;"><span ><b>SOAP Fault (HTTP는 항상 200)</b></span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="width: 19.7286%; height: 21px;"><span ><b>스키마 정의</b></span></td>
+<td style="width: 34.1473%; height: 21px;"><span >선택 (OpenAPI)</span></td>
+<td style="width: 46.124%; height: 21px;"><span >필수 (WSDL)</span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="width: 19.7286%; height: 21px;"><span ><b>인증</b></span></td>
+<td style="width: 34.1473%; height: 21px;"><span >JWT, OAuth2, API Key 등 다양</span></td>
+<td style="width: 46.124%; height: 21px;"><span >WS-Security (Digest/Basic)</span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="width: 19.7286%; height: 21px;"><span ><b>학습 난이도</b></span></td>
+<td style="width: 34.1473%; height: 21px;"><span >낮음</span></td>
+<td style="width: 46.124%; height: 21px;"><span >높음</span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="width: 19.7286%; height: 21px;"><span ><b>주요 사용처</b></span></td>
+<td style="width: 34.1473%; height: 21px;"><span >웹/모바일 API</span></td>
+<td style="width: 46.124%; height: 21px;"><span >금융, 의료, 산업 장비</span></td>
+</tr>
+</tbody>
+</table>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">&nbsp;</p></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/441">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

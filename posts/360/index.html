@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AWS EC2(VPC, 서브넷, 키 페어, 보안그룹) 구현 - 2 — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/360">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>AWS EC2(VPC, 서브넷, 키 페어, 보안그룹) 구현 - 2</h1>
+  <div class="meta"><span class="cat">DevOps</span> · 2022-09-15</div>
+  <article>
+<p data-ke-size="size16">안녕하세요.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">전에 만들었던 VPC 에 이어 오늘은 EC2 를 만들어보겠습니다.</p>
+<figure id="og_1663336164118" contenteditable="false" data-ke-type="opengraph" data-ke-align="alignCenter" data-og-type="article" data-og-title="AWS VPC(서브넷, 라우팅 테이블, 보안그룹) 구현 - 1" data-og-description="안녕하세요. AWS 강의를 보고 작성하는 글 입니다. VPC(서브넷, 라우팅 테이블, 보안 그룹, 웹 서버), AMI, 로드 밸런서(ALB)를 구현하게 됩니다. 그 중 오늘은 VPC 생성에 대한 글을 작성하겠습니다. AW" data-og-host="newbiecs.tistory.com" data-og-source-url="https://newbiecs.tistory.com/359" data-og-url="https://newbiecs.tistory.com/359" data-og-image="https://blog.kakaocdn.net/dna/bDcJzU/hyPNVaBWxe/AAAAAAAAAAAAAAAAAAAAAFhKQl5pBCiKTkUIjg2nmVWvXPcIsHuVXuciQ24J1d7u/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=6o%2BVsjwFuKHSlDKQleEbPn2eEAQ%3D"><a href="https://newbiecs.tistory.com/359" target="_blank" rel="noopener" data-source-url="https://newbiecs.tistory.com/359">
+<div class="og-image" style="background-image: url('https://blog.kakaocdn.net/dna/bDcJzU/hyPNVaBWxe/AAAAAAAAAAAAAAAAAAAAAFhKQl5pBCiKTkUIjg2nmVWvXPcIsHuVXuciQ24J1d7u/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=6o%2BVsjwFuKHSlDKQleEbPn2eEAQ%3D');">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">AWS VPC(서브넷, 라우팅 테이블, 보안그룹) 구현 - 1</p>
+<p class="og-desc" data-ke-size="size16">안녕하세요. AWS 강의를 보고 작성하는 글 입니다. VPC(서브넷, 라우팅 테이블, 보안 그룹, 웹 서버), AMI, 로드 밸런서(ALB)를 구현하게 됩니다. 그 중 오늘은 VPC 생성에 대한 글을 작성하겠습니다. AW</p>
+<p class="og-host" data-ke-size="size16">newbiecs.tistory.com</p>
+</div>
+</a></figure>
+<h3 data-ke-size="size23">웹 서버</h3>
+<h4 data-ke-size="size20">EC2(Elastic Compute Cloud) 이해하기</h4>
+<p data-ke-size="size16">EC2는 AWS 클라우드에서 확장 가능한 컴퓨팅 용량을 제공합니다. EC2를 사용하면 하드웨어 선투자할 필요가 없어 더 빠르게 애플리케이션을 개발하고 배포할 수 있습니다. EC2를 통해, 원하는 만큼 가상 서버를 구축하고 보안 및 네트워크 구성과 스토리지 관리가 가능합니다. 또한, EC2는 갑작스러운 트래픽 증가와 같은 변동 사항에도 신속하게 규모를 확장하거나 축소할 수 있어 서버 트래픽 예측 필요성이 줄어듭니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="1574" data-origin-height="1158"><span data-url="/assets/posts/360/01.png" data-phocus="/assets/posts/360/01.png"><img src="/assets/posts/360/01.png" loading="lazy" width="1574" height="1158" data-origin-width="1574" data-origin-height="1158"/></span></figure>
+</p>
+<h3 data-ke-size="size23">웹 서버 인스턴스</h3>
+<h4 data-ke-size="size20">웹 서버 인스턴스 생성</h4>
+<p data-ke-size="size16">인스턴스는 아래의 단계를 통해 생성됩니다.</p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li>AMI 선택</li>
+<li>인스턴스 유형 선택</li>
+<li>인스턴스 구성</li>
+<li>스토리지 추가</li>
+<li>태그 추가</li>
+<li>보안 그룹 구성</li>
+<li>검토</li>
+</ul>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="552" data-origin-height="562"><span data-url="/assets/posts/360/02.png" data-phocus="/assets/posts/360/02.png"><img src="/assets/posts/360/02.png" loading="lazy" width="552" height="562" data-origin-width="552" data-origin-height="562"/></span></figure>
+</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">인스턴스 시작을 누르면 이름을 먼저 작성합니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">다음은 OS 이미지를 선택합니다 배우는 단계니 기본 사양으로 설정하겠습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">인스턴스 유형 또한 기본으로 설정하겠습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="1368" data-origin-height="854"><span data-url="/assets/posts/360/03.png" data-phocus="/assets/posts/360/03.png" data-alt="새 키 페어 생성"><img src="/assets/posts/360/03.png" loading="lazy" width="1368" height="854" data-origin-width="1368" data-origin-height="854"/></span><figcaption>새 키 페어 생성</figcaption>
+</figure>
+</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">키 페어를 사용하여 인스턴스에 안전하게 연결 합니다.</p>
+<p data-ke-size="size16">'새 키 페어 생성' 을 클릭 합니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="1258" data-origin-height="1258"><span data-url="/assets/posts/360/04.png" data-phocus="/assets/posts/360/04.png" data-alt="키 페어 생성"><img src="/assets/posts/360/04.png" loading="lazy" width="1258" height="1258" data-origin-width="1258" data-origin-height="1258"/></span><figcaption>키 페어 생성</figcaption>
+</figure>
+</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">저는 Mac으로 사용하기 때문에 .pem 으로 생성하겠습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">다음으로 보이는 '네트워크 설정' 편집 버튼을 누릅니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="1368" data-origin-height="636"><span data-url="/assets/posts/360/05.png" data-phocus="/assets/posts/360/05.png"><img src="/assets/posts/360/05.png" loading="lazy" width="1368" height="636" data-origin-width="1368" data-origin-height="636"/></span></figure>
+</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">퍼블릭 IP 자동 할당을 활성화로 변경해주시고, 전에 만들었던 VPC 와 서브넷을 등록합니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="1294" data-origin-height="1208"><span data-url="/assets/posts/360/06.png" data-phocus="/assets/posts/360/06.png"><img src="/assets/posts/360/06.png" loading="lazy" width="1294" height="1208" data-origin-width="1294" data-origin-height="1208"/></span></figure>
+</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">다음으로 VPC 생성할 때 만들었던 Security Grou을 설정해주시고, 스토리지는 기본으로 두겠습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">마지막으로 고급 세부 정보 -&gt; 사용자 데이터에 아래 코드를 복사해서 붙여넣기 합니다.</p>
+<pre id="code_1663158641553" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>#!/bin/sh
+
+    # Install a LAMP stack
+    amazon-linux-extras install -y lamp-mariadb10.2-php7.2 php7.2
+    yum -y install httpd php-mbstring
+
+    # Start the web server
+    chkconfig httpd on
+    systemctl start httpd
+
+    # Install the web pages for our lab
+    if [ ! -f /var/www/html/immersion-day-app-php7.tar.gz ]; then
+    cd /var/www/html
+    wget https://aws-joozero.s3.ap-northeast-2.amazonaws.com/immersion-day-app-php7.tar.gz  
+    tar xvfz immersion-day-app-php7.tar.gz
+    fi
+
+    # Install the AWS SDK for PHP
+    if [ ! -f /var/www/html/aws.zip ]; then
+    cd /var/www/html
+    mkdir vendor
+    cd vendor
+    wget https://docs.aws.amazon.com/aws-sdk-php/v3/download/aws.zip
+    unzip aws.zip
+    fi
+
+    # Update existing packages
+    yum -y update</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">그럼 이제 EC2 인스턴스를 시작시키면 됩니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">간단히 한번 정리하면 VPC 를 만들었다고 웹 서버가 구동되는 것이 아닌 EC2를 만들어야 웹을 연결할 수 있는 IP 가 나옵니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="1182" data-origin-height="786"><span data-url="/assets/posts/360/07.png" data-phocus="/assets/posts/360/07.png" data-alt="EC2"><img src="/assets/posts/360/07.png" loading="lazy" width="1182" height="786" data-origin-width="1182" data-origin-height="786"/></span><figcaption>EC2</figcaption>
+</figure>
+</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">여기서 퍼블릭 IPv4 주소를 웹 사이트에 입력합니다.</p>
+<p data-ke-size="size16">하지만 저는 접속이 되지 않았습니다..</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">이유를 찾아보다가 문득 든 생각이 카페에서 VPC를 만들었고, 집에서 EC2를 만들었네? 그러면 보안그룹에 '내 IP'를 설정했으니 안됐던 거구나 해서 다시 보안그룹에 들어가서 내 IP를 한번 더 클릭했고, 정상적으로 접속이 되었습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="1308" data-origin-height="516"><span data-url="/assets/posts/360/08.png" data-phocus="/assets/posts/360/08.png" data-alt="IP로 접속하면 사이트가 잘 뜨는 것을 확인"><img src="/assets/posts/360/08.png" loading="lazy" width="1308" height="516" data-origin-width="1308" data-origin-height="516"/></span><figcaption>IP로 접속하면 사이트가 잘 뜨는 것을 확인</figcaption>
+</figure>
+</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">현재의 아키텍처 구성은 아래와 같습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="732" data-origin-height="540"><span data-url="/assets/posts/360/09.png" data-phocus="/assets/posts/360/09.png"><img src="/assets/posts/360/09.png" loading="lazy" width="732" height="540" data-origin-width="732" data-origin-height="540"/></span></figure>
+</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">현재는 한 개의 EC2를 생성하였고, 서브넷도 Tim-subnet-public1을 사용하였습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">다음으로 할 것은 AMI 을 활용하여 EC2를 생성하고, 서브넷 Tim-subnet-public2 를 사용해보겠습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">감사합니다.</p></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/360">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

@@ -123,7 +123,7 @@
     }
     .cat-ai { color: var(--accent); }
     .cat-devops { color: var(--blue); }
-    .cat-lang { color: var(--amber); }
+    .cat-backend { color: var(--amber); }
     .post .title { font-size: 15px; }
     .post[hidden] { display: none; }
 
@@ -268,62 +268,17 @@
   <section id="blog">
     <div class="section-head">
       <h2>블로그</h2>
-      <a class="more" href="https://newbiecs.tistory.com/">전체 보기 →</a>
+      <a class="more" href="/posts/">전체 보기 →</a>
     </div>
 
     <div class="tabs" role="tablist">
       <button class="tab active" data-cat="all">전체</button>
       <button class="tab" data-cat="ai">AI · Vision</button>
       <button class="tab" data-cat="devops">DevOps</button>
-      <button class="tab" data-cat="lang">Language</button>
+      <button class="tab" data-cat="backend">Backend</button>
     </div>
 
-    <div class="posts">
-      <a class="post" data-cat="ai" href="https://newbiecs.tistory.com/442">
-        <span class="cat cat-ai">AI</span>
-        <span class="title">Ubuntu 24.04 + DeepStream 9.0 개발 환경 구축기 (Docker 기반) with YOLOv8</span>
-      </a>
-      <a class="post" data-cat="ai" href="https://newbiecs.tistory.com/441">
-        <span class="cat cat-ai">AI</span>
-        <span class="title">ONVIF XML과 SOAP에 대해서 알아보고 REST API와 비교</span>
-      </a>
-      <a class="post" data-cat="ai" href="https://newbiecs.tistory.com/440">
-        <span class="cat cat-ai">AI</span>
-        <span class="title">ONVIF로 IP 카메라 설정 제어</span>
-      </a>
-      <a class="post" data-cat="ai" href="https://newbiecs.tistory.com/435">
-        <span class="cat cat-ai">AI</span>
-        <span class="title">CUDA란?</span>
-      </a>
-      <a class="post" data-cat="ai" href="https://newbiecs.tistory.com/434">
-        <span class="cat cat-ai">AI</span>
-        <span class="title">DeepStream이란? with Gstreamer</span>
-      </a>
-      <a class="post" data-cat="devops" href="https://newbiecs.tistory.com/443">
-        <span class="cat cat-devops">DevOps</span>
-        <span class="title">Ubuntu 서버 미사용 디스크를 /data 로 마운트하기 (LVM 구성)</span>
-      </a>
-      <a class="post" data-cat="devops" href="https://newbiecs.tistory.com/437">
-        <span class="cat cat-devops">DevOps</span>
-        <span class="title">많은 서버를 한 번에 제어하는 방법 (tmux + Bash 스크립트)</span>
-      </a>
-      <a class="post" data-cat="devops" href="https://newbiecs.tistory.com/433">
-        <span class="cat cat-devops">DevOps</span>
-        <span class="title">Elemental MediaConvert 사용기 with FastAPI, S3 Presigned URL</span>
-      </a>
-      <a class="post" data-cat="devops" href="https://newbiecs.tistory.com/432">
-        <span class="cat cat-devops">DevOps</span>
-        <span class="title">앤서블(Ansible) 이란?</span>
-      </a>
-      <a class="post" data-cat="lang" href="https://newbiecs.tistory.com/439">
-        <span class="cat cat-lang">Lang</span>
-        <span class="title">[C++] 전역 변수, 정적 변수, 내부 연결, 외부 연결</span>
-      </a>
-      <a class="post" data-cat="lang" href="https://newbiecs.tistory.com/436">
-        <span class="cat cat-lang">Lang</span>
-        <span class="title">[Python] Iterator, Generator 정리</span>
-      </a>
-    </div>
+    <div class="posts" id="recent-posts"></div>
   </section>
 
   <section id="certs">
@@ -347,15 +302,24 @@
 </footer>
 
 <script>
-  const tabs = document.querySelectorAll('.tab');
-  const posts = document.querySelectorAll('.post');
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
+  const LABEL = { ai: 'AI', devops: 'DevOps', backend: 'Backend' };
+  fetch('/posts.json').then(r => r.json()).then(all => {
+    const box = document.getElementById('recent-posts');
+    const render = cat => {
+      const list = (cat === 'all' ? all : all.filter(p => p.tab === cat)).slice(0, 8);
+      box.innerHTML = list.map(p => `
+        <a class="post" data-cat="${p.tab}" href="/posts/${p.id}/">
+          <span class="cat cat-${p.tab}">${LABEL[p.tab]}</span>
+          <span class="title">${p.title.replace(/</g, '&lt;')}</span>
+        </a>`).join('');
+    };
+    render('all');
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(tab => tab.addEventListener('click', () => {
       tabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
-      const cat = tab.dataset.cat;
-      posts.forEach(p => { p.hidden = cat !== 'all' && p.dataset.cat !== cat; });
-    });
+      render(tab.dataset.cat);
+    }));
   });
 </script>
 

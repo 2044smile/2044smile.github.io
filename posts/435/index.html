@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CUDA란? — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/435">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>CUDA란?</h1>
+  <div class="meta"><span class="cat">AI · Vision</span> · 2025-10-27</div>
+  <article>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="1115" data-origin-height="400"><span data-url="/assets/posts/435/01.png" data-phocus="/assets/posts/435/01.png"><img src="/assets/posts/435/01.png" loading="lazy" width="1115" height="400" data-origin-width="1115" data-origin-height="400"/></span></figure>
+</p>
+<h1 data-pm-slice="0 0 []" data-prosemirror-node-block="true" data-prosemirror-node-name="heading" data-prosemirror-content-type="node"><span >CUDA(Compute Unified Device Architecture)</span></h1>
+<ul style="list-style-type: disc;" data-prosemirror-node-block="true" data-prosemirror-node-name="bulletList" data-prosemirror-content-type="node" data-ke-list-type="disc">
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span ><b>GPU의 수천 개 코어를 동시에 사용할 수 있게 해주는 프로그래밍 도구</b></span></li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >병렬 컴퓨팅 플랫폼이자 프로그래밍 모델로 GPU, Graphics Processing Unit을 활용해 일반적인 병렬 연산을 수행할 수 있게 해준다.</span></li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >PyTorch, TensorFlow 같은 프레임워크도 내부적으로 CUDA를 사용해 연산을 처리합니다.</span>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >PyTorch -&gt; CUDA -&gt; GPU</span></li>
+</ul>
+</li>
+</ul>
+<h2 data-prosemirror-node-block="true" data-prosemirror-node-name="heading" data-prosemirror-content-type="node" data-ke-size="size26"><span >개념</span></h2>
+<ul style="list-style-type: disc;" data-prosemirror-node-block="true" data-prosemirror-node-name="bulletList" data-prosemirror-content-type="node" data-ke-list-type="disc">
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >병렬 컴퓨팅 플랫폼으로 <b>GPU에서 실행되는 코드를 작성할 수 있는 API를 제공</b>한다.</span></li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span ><b><span >개발자가 GPU의 연산 자원을 이용해 수천 개의 Thread를 병렬로 실행할 수 있게 하며, 이를 통해 대규모 데이터 처리 작업을 빠르게 수행할 수 있다.</span></b></span></li>
+</ul>
+<h2 data-prosemirror-node-block="true" data-prosemirror-node-name="heading" data-prosemirror-content-type="node" data-ke-size="size26"><span >구성 요소</span></h2>
+<p data-ke-size="size16">&nbsp;</p>
+<div data-prosemirror-node-block="true" data-prosemirror-node-name="mediaSingle" data-prosemirror-content-type="node" data-media-vc-wrapper="true">
+<div data-media-vc-wrapper="true" data-width-type="pixel" data-width="250" data-layout="center" data-node-type="mediaSingle">
+<div >
+<div>
+<div><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="415" data-origin-height="287"><span data-url="/assets/posts/435/02.png" data-phocus="/assets/posts/435/02.png"><img src="/assets/posts/435/02.png" loading="lazy" width="415" height="287" data-origin-width="415" data-origin-height="287"/></span></figure>
+</div>
+</div>
+</div>
+</div>
+</div>
+<ul style="list-style-type: disc;" data-prosemirror-node-block="true" data-prosemirror-node-name="bulletList" data-prosemirror-content-type="node" data-ke-list-type="disc">
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >Thread와 Block</span>
+<ul style="list-style-type: disc;" data-prosemirror-node-block="true" data-prosemirror-node-name="bulletList" data-prosemirror-content-type="node" data-ke-list-type="disc">
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >병렬 처리를 수행하는 기본 단위</span></li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span ><b>Thread들은 Block이라는 그룹으로 묶인다.</b></span></li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >Block내의 Thread는 같은 메모리 공간을 공유할 수 있어 협력하여 연산을 수행할 수 있다.</span></li>
+</ul>
+</li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >Grid</span>
+<ul style="list-style-type: disc;" data-prosemirror-node-block="true" data-prosemirror-node-name="bulletList" data-prosemirror-content-type="node" data-ke-list-type="disc">
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span ><b>Block들은 Grid라는 상위 개념으로 묶인다.</b></span></li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span ><span ><b>Thread &lt; Block &lt; Grid의 계층 구조를 통해 GPU에서 병렬 처리를 조직화</b></span>한다.</span></li>
+</ul>
+</li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span ><b>CUDA Kernel</b></span>
+<ul style="list-style-type: disc;" data-prosemirror-node-block="true" data-prosemirror-node-name="bulletList" data-prosemirror-content-type="node" data-ke-list-type="disc">
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><b><span >커널 함수는 한 번 실행될 때 수천 개의 Thread를 동시에 실행할 수 있습니다.</span></b></li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >CUDA에서 GPU에서 실행되는 함수를 커널(Kernel) 이라고 하며, <b>__global__ 키워드를 사용해 정의한다.</b></span>
+<ul style="list-style-type: disc;" data-prosemirror-node-block="true" data-prosemirror-node-name="bulletList" data-prosemirror-content-type="node" data-ke-list-type="disc">
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >__global__ 함수는 호스트에서 호출되고, 디바이스에서 실행된다.</span></li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span ><b><span >__global__ 키워드는 이 함수가 GPU에서 실행될 커널임을 의미합니다.</span></b></span></li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >GPU에서 반환값을 직접 받지 않고, 결과는 GPU 메모리(예: cudaMalloc())에 저장된다.</span></li>
+</ul>
+</li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span ><b><span >커널 함수는 호스트(CPU) 측에서 호출되지만, 실제 연산은 디바이스(GPU) 에서 병렬로 수행된다.</span></b></span></li>
+</ul>
+</li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >Memory Model</span>
+<ul style="list-style-type: disc;" data-prosemirror-node-block="true" data-prosemirror-node-name="bulletList" data-prosemirror-content-type="node" data-ke-list-type="disc">
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >CUDA의 메모리 모델은 크게 호스트(CPU) 메모리와 디바이스(GPU)메모리로 나뉜다.</span></li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span ><b>CUDA 프로그램에서 데이터를 처리하려면 호스트 메모리의 데이터를 디바이스 메모리로 복사하고, 연산한 후 다시 결과를 호스트 메모리로 복사해야 한다.</b></span></li>
+</ul>
+</li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >Thread 구성</span>
+<ul style="list-style-type: disc;" data-prosemirror-node-block="true" data-prosemirror-node-name="bulletList" data-prosemirror-content-type="node" data-ke-list-type="disc">
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >하나의 그리드(grid) 안에는 여러 개의 블록(block)이 있다.</span></li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >각 블록은 여러 개의 Thread로 구성됨</span></li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >병렬 연산의 단위는 바로 이 Thread</span></li>
+</ul>
+</li>
+</ul>
+<h3 data-prosemirror-node-block="true" data-prosemirror-node-name="heading" data-prosemirror-content-type="node" data-ke-size="size23"><span >메모리 공간</span></h3>
+<blockquote data-prosemirror-node-block="true" data-prosemirror-node-name="blockquote" data-prosemirror-content-type="node" data-ke-style="style1">
+<p data-prosemirror-node-block="true" data-prosemirror-node-name="paragraph" data-prosemirror-content-type="node" data-ke-size="size16"><span ><b><span >CUDA에는 다양한 메모리 공간이 존재하며, 그에 따라 성능이 달라진다.</span></b></span><br /><span ><b><span >자주 사용하는 데이터는 공유 메모리에 저장하면 속도가 향상됩니다.</span></b></span><br /><span ><b><span >스레드 간 동기화를 통해 연산 충돌을 방지합니다.</span></b></span></p>
+</blockquote>
+<ul style="list-style-type: disc;" data-prosemirror-node-block="true" data-prosemirror-node-name="bulletList" data-prosemirror-content-type="node" data-ke-list-type="disc">
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >전역 메모리(Global Memory): 모든 Thread가 접근할 수 있는 메모리 공간, 접근 속도가 느리지만 용량이 크다.</span></li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span ><b><span >공유 메모리(Shared Memory): 동일한 블록 내의 Thread들끼리 공유할 수 있는 메모리 공간, 접근 속도가 빠르다.</span></b></span></li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >레지스터(Register): 개별 Thread 전용의 고속 메모리 공간</span></li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >상수 메모리(Constant Memory): 변하지 않는 데이터를 저장할 때 유용</span></li>
+</ul>
+<h2 data-prosemirror-node-block="true" data-prosemirror-node-name="heading" data-prosemirror-content-type="node" data-ke-size="size26"><span >병렬 프로그래밍 모델</span></h2>
+<ul style="list-style-type: disc;" data-prosemirror-node-block="true" data-prosemirror-node-name="bulletList" data-prosemirror-content-type="node" data-ke-list-type="disc">
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >CUDA의 병렬 프로그래밍 모델은 SIMT Single Instruction, Multiple Threads 구조를 따른다.</span></li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >이는 여러 Thread가 동일한 명령을 실행하되, <span ><b>각 Thread는 서로 다른 데이터를 처리하는 방식</b></span></span></li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span ><b>각 스레드는 고유한 인덱스를 가지며 이를 이용해 데이터의 특정 부분을 병렬로 처리할 수 있다</b></span></li>
+</ul>
+<h2 data-prosemirror-node-block="true" data-prosemirror-node-name="heading" data-prosemirror-content-type="node" data-ke-size="size26"><span >워프(warp)와 분기</span></h2>
+<ul style="list-style-type: disc;" data-prosemirror-node-block="true" data-prosemirror-node-name="bulletList" data-prosemirror-content-type="node" data-ke-list-type="disc">
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >CUDA의 Thread들은 32개식 워프(warp)라는 단위로 실행된다.</span></li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >즉, 32개의 Thread가 동시에 같은 명령을 실행하게 되는데 이 워프 내에서 서로 다른 조건문에 따라 명령이 갈라지면 성능이 저하될 수 있다. 이를 워프 warp divergence라고 하며 최대한 피하는 것이 성능 초적화에 중요하다.</span></li>
+</ul>
+<h2 data-prosemirror-node-block="true" data-prosemirror-node-name="heading" data-prosemirror-content-type="node" data-ke-size="size26"><span >성능 최적화</span></h2>
+<h3 data-prosemirror-node-block="true" data-prosemirror-node-name="heading" data-prosemirror-content-type="node" data-ke-size="size23"><span >메모리 액세스 패턴</span></h3>
+<ul style="list-style-type: disc;" data-prosemirror-node-block="true" data-prosemirror-node-name="bulletList" data-prosemirror-content-type="node" data-ke-list-type="disc">
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >GPU의 전역 메모리는 느리기 대문에 메모리 공동화(coalesced)를 통해 <b>여러 Thread가 연속적인 메모리 주소에 접근하도록 하여 메모리 접근 효율을 높여야 한다.</b></span></li>
+</ul>
+<h3 data-prosemirror-node-block="true" data-prosemirror-node-name="heading" data-prosemirror-content-type="node" data-ke-size="size23"><span >공유 메모리 사용</span></h3>
+<ul style="list-style-type: disc;" data-prosemirror-node-block="true" data-prosemirror-node-name="bulletList" data-prosemirror-content-type="node" data-ke-list-type="disc">
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span ><span ><b>공유 메모리는 전역 메모리보다 훨씬 빠르기 때문에</b></span>, 가능하다면 데이터의 중간 결과를 공유 메모리에 저장하여 연산을 최적화할 수 있다.</span></li>
+</ul>
+<h3 data-prosemirror-node-block="true" data-prosemirror-node-name="heading" data-prosemirror-content-type="node" data-ke-size="size23"><span >적절한 블록 및 Thread 크기 설정</span></h3>
+<ul style="list-style-type: disc;" data-prosemirror-node-block="true" data-prosemirror-node-name="bulletList" data-prosemirror-content-type="node" data-ke-list-type="disc">
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >블록과 스레드의 개수를 적절히 조정하여 GPU 자원을 효율적으로 사용해야 한다.</span></li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >블록의 크기가 너무 작거나 크면 성능이 저하될 수 있다.</span></li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >일반적으로 32의 배수로 설정하는 것이 좋다.</span></li>
+</ul>
+<h2 data-prosemirror-node-block="true" data-prosemirror-node-name="heading" data-prosemirror-content-type="node" data-ke-size="size26"><span >전체 흐름</span></h2>
+<ol style="list-style-type: decimal;" data-prosemirror-node-block="true" data-prosemirror-node-name="orderedList" data-prosemirror-content-type="node" data-ke-list-type="decimal">
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >CPU (Python/C++)</span>
+<ol style="list-style-type: decimal;" data-prosemirror-node-block="true" data-prosemirror-node-name="orderedList" data-prosemirror-content-type="node" data-ke-list-type="decimal">
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >동영상 로드</span></li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >전처리 설정</span></li>
+</ol>
+</li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span ><b>Deep Stream SDK</b></span>
+<ol style="list-style-type: decimal;" data-prosemirror-node-block="true" data-prosemirror-node-name="orderedList" data-prosemirror-content-type="node" data-ke-list-type="decimal">
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span ><b>무엇을 처리할지 결정</b></span></li>
+</ol>
+</li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span ><b>CUDA</b></span>
+<ol style="list-style-type: decimal;" data-prosemirror-node-block="true" data-prosemirror-node-name="orderedList" data-prosemirror-content-type="node" data-ke-list-type="decimal">
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span ><b>어떻게 GPU를 사용할지 제공</b></span></li>
+</ol>
+</li>
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >GPU 병렬 처리</span>
+<ol style="list-style-type: decimal;" data-prosemirror-node-block="true" data-prosemirror-node-name="orderedList" data-prosemirror-content-type="node" data-ke-list-type="decimal">
+<li data-prosemirror-node-block="true" data-prosemirror-node-name="listItem" data-prosemirror-content-type="node"><span >실제로 병렬 처리 수행</span></li>
+</ol>
+</li>
+</ol>
+<h3 data-ke-size="size23"><span >Reference</span></h3>
+<p data-ke-size="size16"><span ><a  href="https://teach-meaning.tistory.com/1113#:~:text=CUDA%20Kernel%20%3A%20CUDA%20%EC%97%90%EC%84%9C%20GPU,%EB%94%94%EB%B0%94%EC%9D%B4%EC%8A%A4%EC%97%90%EC%84%9C%20%EB%B3%91%EB%A0%AC%EB%A1%9C%20%EC%9D%B4%EB%A4%84%EC%A7%84%EB%8B%A4." target="_blank" rel="noopener&nbsp;noreferrer">https://teach-meaning.tistory.com/1113#:~:text=CUDA%20Kernel%20%3A%20CUDA%20%EC%97%90%EC%84%9C%20GPU,%EB%94%94%EB%B0%94%EC%9D%B4%EC%8A%A4%EC%97%90%EC%84%9C%20%EB%B3%91%EB%A0%AC%EB%A1%9C%20%EC%9D%B4%EB%A4%84%EC%A7%84%EB%8B%A4.</a></span></p>
+<figure id="og_1761536635051" contenteditable="false" data-ke-type="opengraph" data-ke-align="alignCenter" data-og-type="article" data-og-title="CUDA 개요" data-og-description="CUDA, Compute Unified Device Architecture 는 병렬 컴퓨팅 플랫폼이자 프로그래밍 모델로, GPU, Graphics Processing Unit 을 활용해 일반적인 병렬 연산을 수행할 수 있게 해준다.1. CUDA 의 개념병렬 컴퓨팅 플랫폼" data-og-host="teach-meaning.tistory.com" data-og-source-url="https://teach-meaning.tistory.com/1113#:~:text=CUDA%20Kernel%20%3A%20CUDA%20%EC%97%90%EC%84%9C%20GPU,%EB%94%94%EB%B0%94%EC%9D%B4%EC%8A%A4%EC%97%90%EC%84%9C%20%EB%B3%91%EB%A0%AC%EB%A1%9C%20%EC%9D%B4%EB%A4%84%EC%A7%84%EB%8B%A4." data-og-url="https://teach-meaning.tistory.com/1113" data-og-image="https://blog.kakaocdn.net/dna/cK4PKo/hyZMoUgybe/AAAAAAAAAAAAAAAAAAAAAMn0yEGQ--9cPlYoJoFZDMZmbCrFu982xryK50m3cS31/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=skolmAxS8Dh5pN8gjqPkkJFolgE%3D"><a href="https://teach-meaning.tistory.com/1113#:~:text=CUDA%20Kernel%20%3A%20CUDA%20%EC%97%90%EC%84%9C%20GPU,%EB%94%94%EB%B0%94%EC%9D%B4%EC%8A%A4%EC%97%90%EC%84%9C%20%EB%B3%91%EB%A0%AC%EB%A1%9C%20%EC%9D%B4%EB%A4%84%EC%A7%84%EB%8B%A4." target="_blank" rel="noopener" data-source-url="https://teach-meaning.tistory.com/1113#:~:text=CUDA%20Kernel%20%3A%20CUDA%20%EC%97%90%EC%84%9C%20GPU,%EB%94%94%EB%B0%94%EC%9D%B4%EC%8A%A4%EC%97%90%EC%84%9C%20%EB%B3%91%EB%A0%AC%EB%A1%9C%20%EC%9D%B4%EB%A4%84%EC%A7%84%EB%8B%A4.">
+<div class="og-image" style="background-image: url('https://blog.kakaocdn.net/dna/cK4PKo/hyZMoUgybe/AAAAAAAAAAAAAAAAAAAAAMn0yEGQ--9cPlYoJoFZDMZmbCrFu982xryK50m3cS31/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=skolmAxS8Dh5pN8gjqPkkJFolgE%3D');">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">CUDA 개요</p>
+<p class="og-desc" data-ke-size="size16">CUDA, Compute Unified Device Architecture 는 병렬 컴퓨팅 플랫폼이자 프로그래밍 모델로, GPU, Graphics Processing Unit 을 활용해 일반적인 병렬 연산을 수행할 수 있게 해준다.1. CUDA 의 개념병렬 컴퓨팅 플랫폼</p>
+<p class="og-host" data-ke-size="size16">teach-meaning.tistory.com</p>
+</div>
+</a></figure>
+<p data-ke-size="size16"><span ><a  href="https://digitalbourgeois.tistory.com/802" target="_blank" rel="noopener&nbsp;noreferrer">https://digitalbourgeois.tistory.com/802</a></span></p>
+<figure id="og_1761537485642" contenteditable="false" data-ke-type="opengraph" data-ke-align="alignCenter" data-og-type="article" data-og-title="🚀 CUDA 프로그래밍 입문: Python 개발자를 위한 GPU 병렬 처리 가이드" data-og-description="Python 개발자를 위한 CUDA 프로그래밍 가이드딥러닝과 데이터 과학이 발전하면서 GPU를 활용한 연산이 필수적인 요소가 되었습니다. 특히, 병렬 연산이 중요한 작업에서는 CPU보다 GPU가 훨씬 강력" data-og-host="digitalbourgeois.tistory.com" data-og-source-url="https://digitalbourgeois.tistory.com/802" data-og-url="https://digitalbourgeois.tistory.com/802" data-og-image="https://blog.kakaocdn.net/dna/bOB8JO/hyZMIKSe2U/AAAAAAAAAAAAAAAAAAAAADgi_UzzH6FxNeAq1BFdEl_j9vslNlbyTIGqgVbWsU6g/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=moaZjs8W3jVJhk7ZefzI4ulYNBg%3D"><a href="https://digitalbourgeois.tistory.com/802" target="_blank" rel="noopener" data-source-url="https://digitalbourgeois.tistory.com/802">
+<div class="og-image" style="background-image: url('https://blog.kakaocdn.net/dna/bOB8JO/hyZMIKSe2U/AAAAAAAAAAAAAAAAAAAAADgi_UzzH6FxNeAq1BFdEl_j9vslNlbyTIGqgVbWsU6g/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=moaZjs8W3jVJhk7ZefzI4ulYNBg%3D');">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">🚀 CUDA 프로그래밍 입문: Python 개발자를 위한 GPU 병렬 처리 가이드</p>
+<p class="og-desc" data-ke-size="size16">Python 개발자를 위한 CUDA 프로그래밍 가이드딥러닝과 데이터 과학이 발전하면서 GPU를 활용한 연산이 필수적인 요소가 되었습니다. 특히, 병렬 연산이 중요한 작업에서는 CPU보다 GPU가 훨씬 강력</p>
+<p class="og-host" data-ke-size="size16">digitalbourgeois.tistory.com</p>
+</div>
+</a></figure>
+<p data-ke-size="size16">&nbsp;</p></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/435">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

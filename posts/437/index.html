@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>많은 서버를 한 번에 제어하는 방법 (tmux + Bash 스크립트) — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/437">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>많은 서버를 한 번에 제어하는 방법 (tmux + Bash 스크립트)</h1>
+  <div class="meta"><span class="cat">DevOps</span> · 2026-04-03</div>
+  <article>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="1774" data-origin-height="887"><span data-url="/assets/posts/437/01.png" data-phocus="/assets/posts/437/01.png"><img src="/assets/posts/437/01.png" loading="lazy" width="1774" height="887" data-origin-width="1774" data-origin-height="887"/></span></figure>
+</p>
+<p data-ke-size="size16"><span >&nbsp;안녕하세요.</span></p>
+<p data-ke-size="size16"><span >서버를 여러 대 운영하다 보면 "같은 명령어를 모든 서버에 동시에 실행하고 싶다"는 순간이 옵니다.</span></p>
+<p data-ke-size="size16"><span >ssh 연결, 작업, 종료 이 작업을 반복하는 건 노가다 + 시간 낭비 입니다.</span></p>
+<p data-ke-size="size16"><span >그래서 오늘은 tmux + Bash 스크립트로 한 번에 해결하는 방법을 정리했습니다.</span></p>
+<h4 data-ke-size="size20"><span ><b>시작하기 전에 (중요)</b></span></h4>
+<blockquote data-ke-style="style2"><span ><b> 모든 서버에 SSH 접속이 가능해야 합니다 </b></span></blockquote>
+<p data-ke-size="size16"><span ><b><span style="text-align: left;">즉, 각 서버에 SSH 서버가 실행 중이어야 하고, 네트워크로 접근 가능해야 하며 키 인증이 되어 있어야 합니다</span></b><span style="text-align: left;"></span></span></p>
+<h2 data-ke-size="size26"><span >tmux란?</span></h2>
+<p data-ke-size="size16"><span ><a  href="https://github.com/tmux/tmux" target="_blank" rel="noopener&nbsp;noreferrer">https://github.com/tmux/tmux</a></span></p>
+<figure id="og_1774997251986" contenteditable="false" data-ke-type="opengraph" data-ke-align="alignCenter" data-og-type="object" data-og-title="GitHub - tmux/tmux: tmux source code" data-og-description="tmux source code. Contribute to tmux/tmux development by creating an account on GitHub." data-og-host="github.com" data-og-source-url="https://github.com/tmux/tmux" data-og-url="https://github.com/tmux/tmux" data-og-image="https://blog.kakaocdn.net/dna/d5DwCm/dJMb86O1Yxh/AAAAAAAAAAAAAAAAAAAAAE1TgEYAU-WlXaeMlaL4OiuBZrOFfrqvM0kRSPuyfGBv/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=UATRlSW1axt80OhuOcWGtVXrlGs%3D"><a href="https://github.com/tmux/tmux" target="_blank" rel="noopener" data-source-url="https://github.com/tmux/tmux">
+<div class="og-image" style="background-image: url('https://blog.kakaocdn.net/dna/d5DwCm/dJMb86O1Yxh/AAAAAAAAAAAAAAAAAAAAAE1TgEYAU-WlXaeMlaL4OiuBZrOFfrqvM0kRSPuyfGBv/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=UATRlSW1axt80OhuOcWGtVXrlGs%3D');">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">GitHub - tmux/tmux: tmux source code</p>
+<p class="og-desc" data-ke-size="size16">tmux source code. Contribute to tmux/tmux development by creating an account on GitHub.</p>
+<p class="og-host" data-ke-size="size16">github.com</p>
+</div>
+</a></figure>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span ><span ><b>tmux</b></span>는 쉽게 말해서 <span ><b>"터미널을 여러 개로 나눠서 동시에 작업"</b></span>할 수 있게 해주는 툴 입니다</span>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span ><b>여러 서버를 한 화면에서 관리 가능</b></span></li>
+<li><span >세션 유지 (SSH 끊겨도 복구 가능)</span></li>
+<li><span ><b>입력을 여러 창에 동시에 전달 가능</b></span></li>
+</ul>
+</li>
+</ul>
+<h3 data-ke-size="size23"><span >목표</span></h3>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span ><b>여러 개의 서버에 동시에 접속</b></span></li>
+<li><span ><b>명령어를 한 번만 입력</b></span></li>
+<li><span ><b>모든 서버에서 동시에 실행</b></span></li>
+</ul>
+<h3 data-ke-size="size23"><span >1. 여러 서버 동시에 접속</span></h3>
+<h4 data-ke-size="size20"><span >move_some_files.bash</span></h4>
+<pre id="code_1774997956113" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>SESSION="multi" # "multi" 대신 다른 이름 사용 가능
+USER="root"
+
+IPS=(
+1.1.1.1
+1.1.1.2
+1.1.1.3
+1.1.1.4
+1.1.1.5
+1.1.1.6
+1.1.1.7
+1.1.1.8
+1.1.1.9
+1.1.1.10
+1.1.1.11
+1.1.1.12
+.
+.
+.
+)
+
+# 같은 이름의 세션이 존재하면 제거
+# 2&gt;/dev/null (세션이 없을 때 발생하는 에러를 무시)
+tmux kill-session -t $SESSION 2&gt;/dev/null
+
+# "multi"라는 이름의 빈 세션이 백그라운드에서 생성됨
+# -d: detach 모드 실행 (백그라운드에서 세션 생성)
+# -s: 세션 이름 지정
+tmux new-session -d -s $SESSION
+
+# send-keys: $SESSION 세션에 키 입력 전송
+# C-m: Carriage Return (Enter 키)
+tmux send-keys -t $SESSION "ssh $USER@${IPS[0]}" C-m
+
+# i=1부터 시작: 첫 번째 서버는 이미 pane으로 존재하므로 건너뜀
+for ((i=1; i&lt;${#IPS[@]}; i++))
+do
+  # $SESSION이 첫 번째 윈도우(0)를 분할
+  # 각 분할은 새로운 pane이 됨
+  tmux split-window -t $SESSION:0  
+  
+  # $SESSION을 "tiled" 레이아웃으로 배치
+  # tiled는 모든 pane을 동일 크기로 정렬 
+  tmux select-layout -t $SESSION tiled 
+  
+  # 새로운 pane에서 SSH 접속
+  tmux send-keys -t $SESSION "ssh $USER@${IPS[$i]}" C-m
+done
+
+# 최종 화면 정렬
+tmux select-layout -t $SESSION tiled
+
+# 모든 pane에 입력 동기화 활성화
+tmux setw -t $SESSION synchronize-panes on 
+# tmux 세션에 접속 (포그라운드로 전환: 사용자 입력이 가능하게 함)
+tmux attach -t $SESSION</code></pre>
+<h3  data-ke-size="size23"><span >2. 파일 배포 자동화</span></h3>
+<h4 data-ke-size="size20"><span >connect.bash</span></h4>
+<pre id="code_1775001050175" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>USER="user"
+PASS="password"
+FILE="something.tar.gz"
+REMOTE_DIR="/home/tim"
+INSTALL_DIR="/home/tim/install"
+
+IPS=(...)
+
+for IP in "$(IPS[@]}"
+do
+  # sshpass -p $PASS ssh ...: 자동 로그인용, 키 입력 없이 자동 실행, 대샹 서버 작업에 필수
+  sshpass -p $PASS ssh -o StrictHostKeyChecking=no $USER@$IP \
+  "mkdir -p $INSTALL_DIR"
+
+  # scp 파일 전송
+  sshpass -p $PASS scp -o StrictHostKeyChecking=no $FILE $USER@$IP:$REMOTE_DIR/
+
+  sshpass -p $PASS ssh -o StrictHostKeyChecking=no $USER@$IP "
+    cd $REMOTE_DIR &amp;&amp;
+    tar -xzf $FILE &amp;&amp;
+    cp -r target $INSTALL_DIR/
+  "
+done</code></pre>
+<h3 data-ke-size="size23"><span >3. 명령어 실행</span></h3>
+<pre id="code_1775195070405" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>./move_some_files.bash
+./connect.bash</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >이렇게 하면 간단하게 위 사진처럼 20개의 터미널을 한 번에 띄워서 파일 전송과 명령어 실행을 동시에 처리할 수 있습니다.</span></p>
+<p data-ke-size="size16"><span >처음에는 번거롭게 느껴질 수 있지만, 한 번 세팅해두면 이후 작업 속도가 확연히 달라집니다.</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >감사합니다.</span></p></div>
+            
+
+
+
+
+
+
+
+
+
+<div data-tistory-react-app="NaverAd"></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/437">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

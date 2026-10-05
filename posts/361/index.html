@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AWS AMI(VPC, 서브넷, 키 페어, 보안그룹) 구현 - 3 — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/361">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>AWS AMI(VPC, 서브넷, 키 페어, 보안그룹) 구현 - 3</h1>
+  <div class="meta"><span class="cat">DevOps</span> · 2022-09-19</div>
+  <article>
+<p data-ke-size="size16">안녕하세요.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">오늘은 전에 만들었던 EC2 웹 서버를 AMI 로 생성하여 EC2 서버를 2개 만들겠습니다.</p>
+<figure id="og_1663336042898" contenteditable="false" data-ke-type="opengraph" data-ke-align="alignCenter" data-og-type="article" data-og-title="AWS EC2(VPC, 서브넷, 키 페어, 보안그룹) 구현 - 2" data-og-description="웹 서버 EC2(Elastic Compute Cloud) 이해하기 EC2는 AWS 클라우드에서 확장 가능한 컴퓨팅 용량을 제공합니다. EC2를 사용하면 하드웨어 선투자할 필요가 없어 더 빠르게 애플리케이션을 개발하고 배포할" data-og-host="newbiecs.tistory.com" data-og-source-url="https://newbiecs.tistory.com/360" data-og-url="https://newbiecs.tistory.com/360" data-og-image="https://blog.kakaocdn.net/dna/IH1A4/hyPNVVY5EQ/AAAAAAAAAAAAAAAAAAAAAMwz3SlLZG751KS72t79uq9HT5JK_9dWnlWV3V9ryCoL/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=x%2FuZgOJgdIFHs16S%2FO5j%2BZnpLpc%3D"><a href="https://newbiecs.tistory.com/360" target="_blank" rel="noopener" data-source-url="https://newbiecs.tistory.com/360">
+<div class="og-image" style="background-image: url('https://blog.kakaocdn.net/dna/IH1A4/hyPNVVY5EQ/AAAAAAAAAAAAAAAAAAAAAMwz3SlLZG751KS72t79uq9HT5JK_9dWnlWV3V9ryCoL/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=x%2FuZgOJgdIFHs16S%2FO5j%2BZnpLpc%3D');">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">AWS EC2(VPC, 서브넷, 키 페어, 보안그룹) 구현 - 2</p>
+<p class="og-desc" data-ke-size="size16">웹 서버 EC2(Elastic Compute Cloud) 이해하기 EC2는 AWS 클라우드에서 확장 가능한 컴퓨팅 용량을 제공합니다. EC2를 사용하면 하드웨어 선투자할 필요가 없어 더 빠르게 애플리케이션을 개발하고 배포할</p>
+<p class="og-host" data-ke-size="size16">newbiecs.tistory.com</p>
+</div>
+</a></figure>
+<p data-ke-size="size16">이렇게 사용하는 케이스는 보통 로드밸런서를 구현하여 2개의 EC2 를 사용하는 경우 사용 합니다.</p>
+<h3 data-ke-size="size23">AMI</h3>
+<h4 data-ke-size="size20">AMI 개념</h4>
+<p data-ke-size="size16">Amazon Machine Image(AMI) 는 인스턴스를 시작하는데 필요한 정보를 제공합니다. 인스턴스를 시작할 때 AMI를 지정해야 하는데 동일한 구성의 인스턴스가 여러 개 필요할 때는 한 AMI를 사용하여 여러 인스턴스를 시작할 수 있습니다.</p>
+<h4 data-ke-size="size20">AMI 생성</h4>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="618" data-origin-height="231"><span data-url="/assets/posts/361/01.png" data-phocus="/assets/posts/361/01.png" data-alt="https://newbiecs.tistory.com/360"><img src="/assets/posts/361/01.png" loading="lazy" width="618" height="231" data-origin-width="618" data-origin-height="231"/></span><figcaption>https://newbiecs.tistory.com/360</figcaption>
+</figure>
+</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">전에 만들어놓았던 EC2 를 클릭합니다.&nbsp;</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="502" data-origin-height="455"><span data-url="/assets/posts/361/02.png" data-phocus="/assets/posts/361/02.png"><img src="/assets/posts/361/02.png" loading="lazy" width="502" height="455" data-origin-width="502" data-origin-height="455"/></span></figure>
+</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">작업 - 이미지 및 템플릿 - 이미지 생성을 클릭합니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="658" data-origin-height="825"><span data-url="/assets/posts/361/03.png" data-phocus="/assets/posts/361/03.png"><img src="/assets/posts/361/03.png" loading="lazy" width="658" height="825" data-origin-width="658" data-origin-height="825"/></span></figure>
+</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">이미지 이름을 입력하고, 맨 아래있는 '이미지 생성'을 클릭합니다.</p>
+<p data-ke-size="size16">그러면 AMI 메뉴를 클릭하면 만들어진 EC2를 확인할 수 있습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">현재까지 구성한 아키텍처는 아래와 같습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="524" data-origin-height="359"><span data-url="/assets/posts/361/04.png" data-phocus="/assets/posts/361/04.png"><img src="/assets/posts/361/04.png" loading="lazy" width="524" height="359" data-origin-width="524" data-origin-height="359"/></span></figure>
+</p>
+<p data-ke-size="size16">&nbsp;</p>
+<h4 data-ke-size="size20">AMI 기반 인스턴스 생성</h4>
+<p data-ke-size="size16">AMI 메뉴에서 상태 변경이 완료되면 AMI로 인스턴스 시작 버튼을 클릭합니다.</p>
+<p data-ke-size="size16">이름은 아까 설정했던 'Tim 2' 로 설정하겠습니다.</p>
+<p data-ke-size="size16">그 아래 '애플리케이션 및 OS 이미지' 는 카탈로그의 AMI 를 선택하면 됩니다.</p>
+<p data-ke-size="size16">인스턴스 유형도 저희는 프리티어를 사용하고 있기 때문에 '프리티어 사용가능' 유형을 유지하겠습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">키 페어(로그인) 한 마디로 인스턴스를 연결 할 때 키 페어를 사용하여 안전하게 연결 할 수 있습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="575" data-origin-height="612"><span data-url="/assets/posts/361/05.png" data-phocus="/assets/posts/361/05.png"><img src="/assets/posts/361/05.png" loading="lazy" width="575" height="612" data-origin-width="575" data-origin-height="612"/></span></figure>
+</p>
+<p data-ke-size="size16">중요한 것은 '네트워크 설정' 입니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="731" data-origin-height="626"><span data-url="/assets/posts/361/06.png" data-phocus="/assets/posts/361/06.png"><img src="/assets/posts/361/06.png" loading="lazy" width="731" height="626" data-origin-width="731" data-origin-height="626"/></span></figure>
+</p>
+<p data-ke-size="size16">여기서 VPC 는 default 로 선택되어 있을 것 입니다.</p>
+<p data-ke-size="size16">저희가 생성한 VPC 'Tim-vpc' 로 변경해줍니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">다음으로 서브넷을 설정해주어야 합니다.</p>
+<p data-ke-size="size16">지금 떠 있는 EC2 는 -2a 를 바라보고 있기 때문에 AMI 으로 새로 만드는 것은 -2c로 설정하겠습니다. 또 퍼블릭 IP 자동 할당은 비활성화로 설정되어 있는 활성화로 변경해야 합니다. 마지막으로 '방화벽(보안그룹)' 은 기존 보안 그룹 선택을 해서 생성한 'Tim-sg' 를 선택합니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="731" data-origin-height="626"><span data-url="/assets/posts/361/07.png" data-phocus="/assets/posts/361/07.png"><img src="/assets/posts/361/07.png" loading="lazy" width="731" height="626" data-origin-width="731" data-origin-height="626"/></span></figure>
+</p>
+<p data-ke-size="size16">마지막으로 인스턴스 시작을 누르면!</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="278" data-origin-height="241"><span data-url="/assets/posts/361/08.png" data-phocus="/assets/posts/361/08.png" data-alt="AMI 로 Tim 2 인스턴스를 생성하였다."><img src="/assets/posts/361/08.png" loading="lazy" width="278" height="241" data-origin-width="278" data-origin-height="241"/></span><figcaption>AMI 로 Tim 2 인스턴스를 생성하였다.</figcaption>
+</figure>
+</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">현재까지 아키텍처 구성은 아래와 같습니다.</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="521" data-origin-height="360"><span data-url="/assets/posts/361/09.png" data-phocus="/assets/posts/361/09.png"><img src="/assets/posts/361/09.png" loading="lazy" width="521" height="360" data-origin-width="521" data-origin-height="360"/></span></figure>
+</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">마지막으로 로드밸런서를 생성해보겠습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">감사합니다.</p></div>
+            
+
+
+
+
+
+
+
+
+
+<div data-tistory-react-app="NaverAd"></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/361">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

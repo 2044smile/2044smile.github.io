@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CLTR 군중 현지화를 위한 종단 간 변환기 모델 - 개념 — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/430">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>CLTR 군중 현지화를 위한 종단 간 변환기 모델 - 개념</h1>
+  <div class="meta"><span class="cat">AI · Vision</span> · 2025-05-23</div>
+  <article>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-filename="cltr.jpeg" data-origin-width="2048" data-origin-height="1529"><span data-url="/assets/posts/430/01.jpg" data-phocus="/assets/posts/430/01.jpg" data-alt="https://github.com/dk-liang/CLTR?tab=readme-ov-file"><img src="/assets/posts/430/01.jpg" loading="lazy" width="2048" height="1529" data-filename="cltr.jpeg" data-origin-width="2048" data-origin-height="1529"/></span><figcaption>https://github.com/dk-liang/CLTR?tab=readme-ov-file</figcaption>
+</figure>
+</p>
+<h3 data-ke-size="size23"><span >들어가기 전에</span></h3>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >요즘 ChatGPT 와 Grok 등등 AI 가 발달 함에 따라 쉽게 지식을 습득할 수 있다는 것은 좋은 일이지만 기록하지 않는 이상 장기 기억으로 잘 넘어가지를 않는다. 전에도 게시글을 작성하고 학습했던 것 처럼 다시 시작한다!</span></li>
+<li><span >Crowd Counting 는 사람들이 북적이는 곳(예: 콘서트, 지하철역, 행사 현장)에서 사진이나 영상으로 몇 명이 있는지 세는 기술, </span><span ><i><b>CLTR 은 이런 사람 수를 세는 데 특화된 인공지능 모델</b></i></span></li>
+<li><span >백엔드 개발자의 AI 도전기라 봐주시면 감사하겠습니다</span></li>
+</ul>
+<h2 data-ke-size="size26"><span >CLTR 개념</span></h2>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><u><i><span ><b>군중 위치 추정, 즉 사람들이 많은 사진에서 머리 위치를 찾아서 사람 수를 세는 인공지능 모델</b></span></i></u></li>
+<li><span >기존 방법들은 의사 경계 상자(가짜 상자; pseudo-bounding box) 또는 미리 설계된 위치 지도(localization map)를 사용하며, <span ><i><b>복잡한 후처리 과정을 거쳐 머리 위치를 얻습니다. 하지만 이번 논문에서는 CLTR이라는 새로운 방법을 제안</b></i></span></span></li>
+</ul>
+<p data-ke-size="size16"><span ><b>FLOW</b></span></p>
+<blockquote data-ke-style="style2"><span >CLTR은 머리 위치를 찾는 문제를 "여러 점을 한꺼번에 예측하는 문제" 로 변경</span></blockquote>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span >사진에서 중요한 특징점(예: 사람 머리의 특징)을 찾아내고, 이를 컴퓨터가 이해할 수 있는 형태(학습 가능한 임베딩) 변환</span></li>
+<li><span >변환기-디코더(Transformer-Decoder)라는 인공지능 기술을 사용해 이 정보를 바탕으로 머리 위치를 예측</span></li>
+<li><span >주변 상황(맥락)을 활용해서 헷갈리는 부분을 줄이고, 더 정확한 매칭을 하도록 KMO 기반 헝가리안 매처라는 도구를 추가</span>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span >이건 마치 퍼즐을 맞출 때 주변 조각을 보고 맞는 위치를 찾는 것</span></li>
+</ol>
+</li>
+</ol>
+<h3 data-ke-size="size23"><span >데이터셋</span><span ></span></h3>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >컴퓨터가 학습할 수 있도록 준비된 데이터(정보) 모음 (예: 친구들 사진을 모아서 "이건 민수, 이건 지민이" 라고 이름 붙여놓은 앨범) 컴퓨터가 그 사진을 보고 사람을 인식하는 법을 배운다</span></li>
+<li><span ><i><b>데이터셋은 보통 사진과 머리 위치 정보(점 또는 밀도 맵)으로 구성</b></i></span></li>
+<li><span ><span ><b>NWPU-Crowd</b></span>, UCF-QNRF, ShanghaiTech Part A, B 등등 수 많은 데이터셋이 존재한다</span></li>
+</ul>
+<h4 data-ke-size="size20"><span >NWPU-Crowd</span></h4>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="1009" data-origin-height="663"><span data-url="/assets/posts/430/02.png" data-phocus="/assets/posts/430/02.png" data-alt="https://mailnwpueducn-my.sharepoint.com/personal/gjy3035_mail_nwpu_edu_cn/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fgjy3035%5Fmail%5Fnwpu%5Fedu%5Fcn%2FDocuments%2F%E8%AE%BA%E6%96%87%E5%BC%80%E6%BA%90%E6%95%B0%E6%8D%AE%2FNWPU%2DCrowd&amp;amp;ga=1"><img src="/assets/posts/430/02.png" loading="lazy" width="1009" height="663" data-origin-width="1009" data-origin-height="663"/></span><figcaption>https://mailnwpueducn-my.sharepoint.com/personal/gjy3035_mail_nwpu_edu_cn/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fgjy3035%5Fmail%5Fnwpu%5Fedu%5Fcn%2FDocuments%2F%E8%AE%BA%E6%96%87%E5%BC%80%E6%BA%90%E6%95%B0%E6%8D%AE%2FNWPU%2DCrowd&amp;ga=1</figcaption>
+</figure>
+</p>
+<p data-ke-size="size18"><span >images_part1.zip, images_part2.zip ... (원본 사진)</span></p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span ><span>크기가 큰 사진과 높은 해상도</span></span></li>
+</ul>
+<p data-ke-size="size18"><span ><span>jsons.zip (머리 위치 정보)</span></span></p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >사진 속 사람 머리 위치를 기록한 정보가 JSON 형식으로 저장 (예: x, y 좌표로 "여기 머리가 있다!" 라고 표시)&nbsp;</span></li>
+</ul>
+<pre id="code_1747986988411" class="javascript" data-ke-language="javascript" data-ke-type="codeblock"><code>{
+	"img_id":"0137.jpg",
+	"human_num":8,
+	"points":[
+		[
+	        1974.0918579101565,
+    	    594.4244079589844
+        ],
+        [
+        	2598.8873291015625,
+        	741.5023803710938
+        ],
+        [
+        	676.1429443359375,
+        	1026.1346740722656
+        ],
+        [
+        	1743.8290405273438,
+        	1061.9303588867188
+        ],
+        [
+        	1647.4972534179688,
+        	781.5009765625
+        ],
+        [
+        	938.0564575195312,
+        	1080.0881958007812
+        ],
+        [
+        	967.3641357421875,
+        	620.226806640625
+        ],
+        [
+        	1347.5677490234375,
+        	1044.005615234375
+        ]
+    ],
+	"boxes":[
+        [
+        	1889.8,
+        	491.875,
+        	2030.2,
+        	701.125
+        ],
+        [
+        	2518.275,
+        	651.6,
+        	2662.725,
+        	824.4
+        ],
+        [
+        	618.35,
+        	915.65,
+        	777.65,
+        	1134.35
+        ],
+        [
+        	1647.65,
+        	949.125,
+        	1812.35,
+        	1171.875
+        ],
+        [
+        	1586.725,
+        	698.95,
+        	1712.275,
+        	869.05
+        ],
+        [
+        	882.45,
+        	978.225,
+        	1025.55,
+        	1184.775
+        ],
+        [
+        	913.55,
+        	532.85,
+        	1040.45,
+        	719.15
+        ],
+        [
+        	1268.575,
+        	933.35,
+        	1418.425,
+        	1146.65
+        ]
+    ]
+}</code></pre>
+<p data-ke-size="size18"><span ><span>mats.zip (밀도 맵; Density Map)</span></span></p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >밀도 맵은 사진에서 사람이 얼마나 밀집되어 있는지 <span ><b>색깔로 나타낸 지도</b></span></span></li>
+</ul>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="1884" data-origin-height="488"><span data-url="/assets/posts/430/03.png" data-phocus="/assets/posts/430/03.png"><img src="/assets/posts/430/03.png" loading="lazy" width="1884" height="488" data-origin-width="1884" data-origin-height="488"/></span></figure>
+</p>
+<p data-ke-size="size18"><span >val.txt(검증), test.txt(테스트), train.txt(학습) 데이터 리스트</span></p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >검증(데이터)용 사진 목록이 적힌 텍스트 파일</span>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >CLTR 모델을 학습시킨 후, 얼마나 잘 배웠는지 확인하려면 테스트 필요</span></li>
+<li><span >val.txt 는 그 테스트에 사용할 사진 리스트를 알려준다</span></li>
+<li><span >100장으로 테스트</span></li>
+</ul>
+</li>
+<li><span >테스트(데이터)용 사진 목록이 적인 텍스트 파일</span><span ></span>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >모델을 최종적으로 평가할 때 사용하는 데이터</span></li>
+<li><span >200장으로 테스트</span></li>
+</ul>
+</li>
+<li><span >학습(데이터)용 사진 목록이 적힌 텍스트 파일</span>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >연습에 쓸 사진 리스트를 알려준다</span></li>
+<li><b><span >500장; 학습에 쓸 사진이 더 많다는 뜻</span></b></li>
+</ul>
+</li>
+</ul>
+<h3 data-ke-size="size23">머신러닝</h3>
+<h4 data-ke-size="size20">데이터 준비</h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >앞에서 말했던 <span ><i><b>데이터셋을 이용해 머신러닝으로 모델</b></i></span>을 가르친다</span>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >위에서 언급한 NWPU-Crowd 데이터셋을 사용한다</span></li>
+</ul>
+</li>
+</ul>
+<h4 data-ke-size="size20"><span >모델 설정(Transformer; PyTorch)</span></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span ><span ><b>CLTR은 Transformer</b></span>라는 기술을 사용, <b>사진에서 특징을 찾고 머리 위치를 예측</b></span></li>
+<li><span >PyTorch 로 CLTR이 실행할 환경을 만든다</span></li>
+</ul>
+<h4 data-ke-size="size20"><span >학습</span></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >CLTR <span ><b>모델이 사진을 보고 사람 수를 예측하고, 그 예측이 정답(데이터셋의 답)과 얼마나 다른지 확인, 틀이면 "이 부분을 고쳐!" 라고 알려주면서 계속 연습</b></span></span><span ></span>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span ><span >사진을 넣고 CLTR이 머리 위치를 점으로 표시하고 숫자 세기</span></span></li>
+<li><span ><span >정답과 비교해서 오차(예: 50명 예측했는데 45명이라는 5명 차이)를 계산</span></span></li>
+<li><span ><span >오차를 줄이도록 CLTR의 "뇌"(파라미터)를 조정</span></span></li>
+<li><span ><span >이 과정은 수학 공식을 사용 (손실 함수와 최적화 알고리즘), 수백 번, 수천 번 반복</span></span></li>
+</ul>
+</li>
+</ul>
+<h4 data-ke-size="size20"><span >pth 파일 저장</span></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >위 과정의 결과를 .pth 파일로 저장</span>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >PyTorch 에서 torch.save(model.state_dict(), 'model.pth') 같은 코드로 저장</span></li>
+<li><span >.pth 파일은 나중에 CLTR을 다시 쓰거나 테스트 할 때 그리고 추가 학습</span></li>
+</ul>
+</li>
+</ul>
+<hr contenteditable="false" data-ke-type="horizontalRule" data-ke-style="style1" />
+<p data-ke-size="size16"><span >&nbsp;CLTR, 데이터셋 그리고 머신러닝에 대해 간단히 배워봤습니다.</span></p>
+<p data-ke-size="size16"><span >다음에는 CLTR 설치 및 세팅하는 방법과 더 나아가 학습된 모델을 활용해 새로운 데이터를 분석하여 바운딩 박스(BBox)와 밀도 맵(Density Map) 같은 결과물을 시각화하며 모델의 성능을 알아보겠습니다.</span></p>
+<h4 data-ke-size="size20"><span >Reference</span></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><a href="https://github.com/dk-liang/CLTR?tab=readme-ov-file" target="_blank" rel="noopener&nbsp;noreferrer">https://github.com/dk-liang/CLTR?tab=readme-ov-file</a></li>
+</ul>
+<figure id="og_1747988887591" contenteditable="false" data-ke-type="opengraph" data-ke-align="alignCenter" data-og-type="object" data-og-title="GitHub - dk-liang/CLTR: [ECCV 2022] An End-to-End Transformer Model for Crowd Localization" data-og-description="[ECCV 2022] An End-to-End Transformer Model for Crowd Localization - GitHub - dk-liang/CLTR: [ECCV 2022] An End-to-End Transformer Model for Crowd Localization" data-og-host="github.com" data-og-source-url="https://github.com/dk-liang/CLTR?tab=readme-ov-file" data-og-url="https://github.com/dk-liang/CLTR" data-og-image="https://blog.kakaocdn.net/dna/cCsNVh/hyYYsJpKwz/AAAAAAAAAAAAAAAAAAAAAJUBJLwwF6eD78qhwwUkKSHH6xsf0TJrpvPMXponEaaN/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=oTEj0wyyvgR8tsl41JAruuHeU2s%3D"><a href="https://github.com/dk-liang/CLTR?tab=readme-ov-file" target="_blank" rel="noopener" data-source-url="https://github.com/dk-liang/CLTR?tab=readme-ov-file">
+<div class="og-image" style="background-image: url('https://blog.kakaocdn.net/dna/cCsNVh/hyYYsJpKwz/AAAAAAAAAAAAAAAAAAAAAJUBJLwwF6eD78qhwwUkKSHH6xsf0TJrpvPMXponEaaN/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=oTEj0wyyvgR8tsl41JAruuHeU2s%3D');">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">GitHub - dk-liang/CLTR: [ECCV 2022] An End-to-End Transformer Model for Crowd Localization</p>
+<p class="og-desc" data-ke-size="size16">[ECCV 2022] An End-to-End Transformer Model for Crowd Localization - GitHub - dk-liang/CLTR: [ECCV 2022] An End-to-End Transformer Model for Crowd Localization</p>
+<p class="og-host" data-ke-size="size16">github.com</p>
+</div>
+</a></figure>
+<p data-ke-size="size16">&nbsp;</p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><a href="https://arxiv.org/abs/2202.13065" target="_blank" rel="noopener&nbsp;noreferrer">https://arxiv.org/abs/2202.13065</a></li>
+</ul>
+<figure id="og_1747988908682" contenteditable="false" data-ke-type="opengraph" data-ke-align="alignCenter" data-og-type="website" data-og-title="An End-to-End Transformer Model for Crowd Localization" data-og-description="Crowd localization, predicting head positions, is a more practical and high-level task than simply counting. Existing methods employ pseudo-bounding boxes or pre-designed localization maps, relying on complex post-processing to obtain the head positions. I" data-og-host="arxiv.org" data-og-source-url="https://arxiv.org/abs/2202.13065" data-og-url="https://arxiv.org/abs/2202.13065v2" data-og-image="https://blog.kakaocdn.net/dna/bWhTtQ/hyYWX4ofsY/AAAAAAAAAAAAAAAAAAAAAIBpn1MDYJdiqD7qFqH8F3x5yCPMLJTTOtZxrxbay7RW/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=ge%2F4bG2czGGfoikGlhn0xiCT3Eo%3D"><a href="https://arxiv.org/abs/2202.13065" target="_blank" rel="noopener" data-source-url="https://arxiv.org/abs/2202.13065">
+<div class="og-image" style="background-image: url('https://blog.kakaocdn.net/dna/bWhTtQ/hyYWX4ofsY/AAAAAAAAAAAAAAAAAAAAAIBpn1MDYJdiqD7qFqH8F3x5yCPMLJTTOtZxrxbay7RW/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=ge%2F4bG2czGGfoikGlhn0xiCT3Eo%3D');">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">An End-to-End Transformer Model for Crowd Localization</p>
+<p class="og-desc" data-ke-size="size16">Crowd localization, predicting head positions, is a more practical and high-level task than simply counting. Existing methods employ pseudo-bounding boxes or pre-designed localization maps, relying on complex post-processing to obtain the head positions. I</p>
+<p class="og-host" data-ke-size="size16">arxiv.org</p>
+</div>
+</a></figure>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><a href="https://mailnwpueducn-my.sharepoint.com/personal/gjy3035_mail_nwpu_edu_cn/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fgjy3035%5Fmail%5Fnwpu%5Fedu%5Fcn%2FDocuments%2F%E8%AE%BA%E6%96%87%E5%BC%80%E6%BA%90%E6%95%B0%E6%8D%AE%2FNWPU%2DCrowd&amp;ga=1" target="_blank" rel="noopener&nbsp;noreferrer">https://mailnwpueducn-my.sharepoint.com/personal/gjy3035_mail_nwpu_edu_cn/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fgjy3035%5Fmail%5Fnwpu%5Fedu%5Fcn%2FDocuments%2F%E8%AE%BA%E6%96%87%E5%BC%80%E6%BA%90%E6%95%B0%E6%8D%AE%2FNWPU%2DCrowd&amp;ga=1</a></li>
+</ul>
+<p data-ke-size="size16">&nbsp;</p></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/430">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

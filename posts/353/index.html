@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Django SSH tunneling(AWS SSH) , AWS RDS, inspectDB — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/353">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>Django SSH tunneling(AWS SSH) , AWS RDS, inspectDB</h1>
+  <div class="meta"><span class="cat">Backend</span> · 2022-07-12</div>
+  <article>
+<p data-ke-size="size16"><b>안녕하세요</b></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><b>오늘은 Local 에서 AWS SSH Tunnel를 연결한 뒤</b></p>
+<p data-ke-size="size16"><b>AWS RDS를 연결하여, inspect DB하는 과정을 설명하겠습니다.</b></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><b>우리들은 평소에 SSH tunnel은 개인 프로젝트를 할 때는 중요하게 여기지 않습니다.</b></p>
+<p data-ke-size="size16"><b>하지만 회사나 보안을 신경써야 되면 무조건 해야되는 것이 SSH tunnel입니다.</b></p>
+<p data-ke-size="size16">&nbsp;</p>
+<blockquote data-ke-size="size16" data-ke-style="style1"><span style="font-family: 'Noto Serif KR';"><span >SSH 터널링은 암호화된 SSH 연결을 통해 임의의 네트워킹 데이터를 전송하는 방법입니다. 기존 응용프로그램에 암호화를 추가하는 데 사용할 수 있습니다. 또한 VPN(Virtual Private Network)을 구현하고 방화벽을 통해 인트라넷 서비스에 액세스하는 데 사용할 수 있습니다.</span></span></blockquote>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="707" data-origin-height="501"><span data-url="/assets/posts/353/01.png" data-phocus="/assets/posts/353/01.png"><img src="/assets/posts/353/01.png" loading="lazy" width="707" height="501" data-origin-width="707" data-origin-height="501"/></span></figure>
+</p>
+<p data-ke-size="size16">위의 사진과 같이 SSH Tunnel이 되지 않으면 접속할 수 없습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">Local -&gt; EC2 ssh-tunneling -&gt; RDS(PostgreSQL, PORT: 5432)</p>
+<p data-ke-size="size16">Local 에서 EC2 ssh-tunneling 로 터널링을 해줘야 한다.</p>
+<p data-ke-size="size16">EC2 ssh-tunneling 에는 유저네임을 지정하면 된다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">ssh username@1.1.1.10 -L 5432:rds.address:5432</p>
+<p data-ke-size="size16">@ 앞에는 Username @ 뒤에는 IP addr,</p>
+<p data-ke-size="size16">-L 뒤에 5432: 는 로컬의 포트 5432를 이용하여</p>
+<p data-ke-size="size16">rds.address:5432 (PostgreSQL) 로 연결이 되는 것이다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">여기까지 이해가 어려울 수 있으니 settings 파일을 보도록 하겠다.</p>
+<pre id="code_1657003266142" class="python" data-ke-language="python" data-ke-type="codeblock"><code>DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': os.getenv('A_DB_DATABASE_NAME', 'postgres'),
+        'USER': os.getenv('A_DB_USERNAME', 'username'),  # 설정한 아이디
+        'PASSWORD': os.getenv('A_DB_PASSWORD', 'password'),  # 설정한 패스워드
+        'HOST': os.getenv('A_DB_HOSTNAME', 'localhost'),  # .cluster-***.ap-northeast-2.rds.amazonaws.com
+        'PORT': os.getenv('A_DB_PORT', 5432)
+    }
+}</code></pre>
+<p data-ke-size="size16">여기서 잠시 HOST를 보내되면 원래 SSH-tunneling 을 이용하지 않게되면</p>
+<p data-ke-size="size16">주석으로 된 부분이 들어와서 연결해야 되는 것이다.</p>
+<p data-ke-size="size16">하지만 우리는 터널링을 했기 때문에 localhost로&nbsp; 설정해서 접속하면 된다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">1. AWS EC2 로 접속하여 터널링을 진행한다.<br />2. 터널링이 완료되었다면 RDS 또한 localhost로 연결이 가능하다.</p>
+<p data-ke-size="size16">왜냐하면 터널링을 통해 연결이 됐기 때문이다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">하지만 이렇게 구현한 케이스는 돈만 있다면 편하게 사용할 수 있다...</p>
+<p data-ke-size="size16">바로 DataGrip과 Pycharm 유료 버전을 사용하면 된다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">마지막으로 inspectDB 하는 법은 간단하다.</p>
+<pre class="python" data-ke-language="python"><code>python manage.py inspectdb &gt; models.py
+
+python manage.py migrate</code></pre>
+<p data-ke-size="size16">감사합니다!</p>
+<p data-ke-size="size16">&nbsp;</p>
+<h4 data-ke-size="size20"><b>참고</b></h4>
+<p data-ke-size="size16"><a href="https://medium.com/serverlessguru/what-is-a-ssh-tunnel-aws-ec2-8ebc394b8208" target="_blank" rel="noopener">https://medium.com/serverlessguru/what-is-a-ssh-tunnel-aws-ec2-8ebc394b8208</a></p>
+<p data-ke-size="size16"><a href="https://jojoldu.tistory.com/623" target="_blank" rel="noopener">https://jojoldu.tistory.com/623</a></p>
+<p data-ke-size="size16">&nbsp;</p></div>
+            
+
+
+
+
+
+
+
+
+
+<div data-tistory-react-app="NaverAd"></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/353">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

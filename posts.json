@@ -1,0 +1,248 @@
+[
+ {
+  "id": 443,
+  "title": "Ubuntu 서버 미사용 디스크를 /data 로 마운트하기 (LVM 구성)",
+  "date": "2026-09-15",
+  "tab": "devops"
+ },
+ {
+  "id": 442,
+  "title": "Ubuntu 24.04 + DeepStream 9.0 개발 환경 구축기 (Docker 기반) with YOLOv8",
+  "date": "2026-08-16",
+  "tab": "ai"
+ },
+ {
+  "id": 441,
+  "title": "ONVIF XML과 SOAP에 대해서 알아보고 REST API와 비교",
+  "date": "2026-05-28",
+  "tab": "ai"
+ },
+ {
+  "id": 440,
+  "title": "ONVIF로 IP 카메라 설정 제어",
+  "date": "2026-05-20",
+  "tab": "ai"
+ },
+ {
+  "id": 438,
+  "title": "FPS(Frame Per Second)란",
+  "date": "2026-04-05",
+  "tab": "ai"
+ },
+ {
+  "id": 437,
+  "title": "많은 서버를 한 번에 제어하는 방법 (tmux + Bash 스크립트)",
+  "date": "2026-04-03",
+  "tab": "devops"
+ },
+ {
+  "id": 436,
+  "title": "[Python] Iterator, Generator 정리",
+  "date": "2025-12-26",
+  "tab": "backend"
+ },
+ {
+  "id": 435,
+  "title": "CUDA란?",
+  "date": "2025-10-27",
+  "tab": "ai"
+ },
+ {
+  "id": 434,
+  "title": "DeepStream란? with Gstreamer",
+  "date": "2025-10-20",
+  "tab": "ai"
+ },
+ {
+  "id": 433,
+  "title": "Elemental MediaConvert 사용기 with FastAPI, S3 Presigned URL",
+  "date": "2025-08-30",
+  "tab": "devops"
+ },
+ {
+  "id": 432,
+  "title": "앤서블(Ansible) 이란?",
+  "date": "2025-06-25",
+  "tab": "devops"
+ },
+ {
+  "id": 431,
+  "title": "[FastAPI] 'Unknown Column' 에서 Alembic 사용법 (SQLAlchemy 스키마 동기화)",
+  "date": "2025-06-15",
+  "tab": "backend"
+ },
+ {
+  "id": 430,
+  "title": "CLTR 군중 현지화를 위한 종단 간 변환기 모델 - 개념",
+  "date": "2025-05-23",
+  "tab": "ai"
+ },
+ {
+  "id": 427,
+  "title": "Django Celery, Rabbitmq 사용한 비동기 작업 처리",
+  "date": "2024-08-14",
+  "tab": "backend"
+ },
+ {
+  "id": 423,
+  "title": "AWS EC2 OOM-killer 문제로 프로세스 강제 종료, swapfile 로 개선",
+  "date": "2024-02-19",
+  "tab": "devops"
+ },
+ {
+  "id": 417,
+  "title": "AWS EC2 사용자 데이터가 작동하지 않을 때 로그 보는 방법",
+  "date": "2024-02-01",
+  "tab": "devops"
+ },
+ {
+  "id": 416,
+  "title": "Docker --oom-kill-disable, --oom-score-adj 에 대해 알아보자",
+  "date": "2024-01-27",
+  "tab": "devops"
+ },
+ {
+  "id": 415,
+  "title": "AWS 보안 그룹 default 를 이용해서 EC2 연결 #2",
+  "date": "2024-01-25",
+  "tab": "devops"
+ },
+ {
+  "id": 414,
+  "title": "AWS 보안 그룹 default 사용 지양...왜? #1",
+  "date": "2024-01-24",
+  "tab": "devops"
+ },
+ {
+  "id": 411,
+  "title": "AWS 보안 그룹(SecurityGroup) 사용 시 8가지 모범 사례",
+  "date": "2024-01-09",
+  "tab": "devops"
+ },
+ {
+  "id": 373,
+  "title": "[PostgreSQL] sorry, too many clients already 문제 해결",
+  "date": "2023-02-23",
+  "tab": "backend"
+ },
+ {
+  "id": 363,
+  "title": "Django ORM replace 'for' vs 'bulk_update'",
+  "date": "2022-09-30",
+  "tab": "backend"
+ },
+ {
+  "id": 362,
+  "title": "AWS Load Balancer(VPC, 서브넷, 키 페어, 보안그룹) 구현 - 4",
+  "date": "2022-09-19",
+  "tab": "devops"
+ },
+ {
+  "id": 361,
+  "title": "AWS AMI(VPC, 서브넷, 키 페어, 보안그룹) 구현 - 3",
+  "date": "2022-09-19",
+  "tab": "devops"
+ },
+ {
+  "id": 360,
+  "title": "AWS EC2(VPC, 서브넷, 키 페어, 보안그룹) 구현 - 2",
+  "date": "2022-09-15",
+  "tab": "devops"
+ },
+ {
+  "id": 359,
+  "title": "AWS VPC(서브넷, 라우팅 테이블, 보안그룹) 구현 - 1",
+  "date": "2022-09-14",
+  "tab": "devops"
+ },
+ {
+  "id": 357,
+  "title": "Kubernetes Helm 문제 해결 Rollme",
+  "date": "2022-08-09",
+  "tab": "devops"
+ },
+ {
+  "id": 353,
+  "title": "Django SSH tunneling(AWS SSH) , AWS RDS, inspectDB",
+  "date": "2022-07-12",
+  "tab": "backend"
+ },
+ {
+  "id": 332,
+  "title": "Python Lambda에 대해서 자세히 알아보자",
+  "date": "2021-04-17",
+  "tab": "backend"
+ },
+ {
+  "id": 331,
+  "title": "Python JIRA 라이브러리로 JIRA 이슈 생성하기",
+  "date": "2021-03-20",
+  "tab": "backend"
+ },
+ {
+  "id": 330,
+  "title": "Kuberntes - Monitoring에 대해 알아보자 (Prometheus, Grafana) [실습환경 minikube]",
+  "date": "2021-03-07",
+  "tab": "devops"
+ },
+ {
+  "id": 326,
+  "title": "주니어 개발자의 Argo Workflow, Events 사용기 - 2",
+  "date": "2021-02-07",
+  "tab": "devops"
+ },
+ {
+  "id": 324,
+  "title": "Argo Workflow 란 무엇인가? - 1",
+  "date": "2021-01-09",
+  "tab": "devops"
+ },
+ {
+  "id": 323,
+  "title": "[Django] GraphQL 기초 한 방 정리",
+  "date": "2020-12-12",
+  "tab": "backend"
+ },
+ {
+  "id": 322,
+  "title": "따라하면서 만들어보는 Git Action CI/CD",
+  "date": "2020-11-28",
+  "tab": "devops"
+ },
+ {
+  "id": 316,
+  "title": "[Django Rest Framework] ModelViewset 동작에 대해 (queryset, get_object)",
+  "date": "2020-08-20",
+  "tab": "backend"
+ },
+ {
+  "id": 280,
+  "title": "Helm 이란",
+  "date": "2020-05-11",
+  "tab": "devops"
+ },
+ {
+  "id": 271,
+  "title": "Django - RESTful 한 API 만들기",
+  "date": "2020-04-21",
+  "tab": "backend"
+ },
+ {
+  "id": 267,
+  "title": "Django REST Framework JWT를 알아보자",
+  "date": "2020-03-21",
+  "tab": "backend"
+ },
+ {
+  "id": 266,
+  "title": "Python 비동기 - Celery, Dramatiq",
+  "date": "2020-03-05",
+  "tab": "backend"
+ },
+ {
+  "id": 262,
+  "title": "Python - unittest Mock",
+  "date": "2020-02-20",
+  "tab": "backend"
+ }
+]

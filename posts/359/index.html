@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AWS VPC(서브넷, 라우팅 테이블, 보안그룹) 구현 - 1 — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/359">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>AWS VPC(서브넷, 라우팅 테이블, 보안그룹) 구현 - 1</h1>
+  <div class="meta"><span class="cat">DevOps</span> · 2022-09-14</div>
+  <article>
+<p data-ke-size="size16" style="text-align: left;">안녕하세요.<br> <br>AWS 강의를 보고 작성하는 글 입니다.<br>VPC(서브넷, 라우팅 테이블, 보안 그룹, 웹 서버), AMI, 로드 밸런서(ALB)를 구현하게 됩니다.<br>그 중 오늘은 VPC 생성에 대한 글을 작성하겠습니다.<br> <br><span >AWS 코어 서비스로 간단한 웹 애플리케이션 직접 만들기(feat. VPC, EC2, ELB)</span><br> <br><span >시작하겠습니다.</span></p>
+<h3 style="text-align: left;" data-ke-size="size23"><span >VPC(Virtual Private Cloud) 이해하기</span></h3>
+<p data-ke-size="size16" style="text-align: left;"><span > 사용자가 정의한 가상의 네트워크 공간 안에서 AWS 리소스를 시작할 수 있습니다.</span><br><span >해당 가상 네트워크는 AWS의 확장 가능한 인프라를 사용한다는 이점과 함께 고객의 데이터 센터에서 운영하는 기존 네트워크와 매우 유사합니다</span></p>
+<h4 style="text-align: left;" data-ke-size="size20">VPC 생성</h4><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="856" data-origin-height="111"><span data-url="/assets/posts/359/01.png" data-phocus="/assets/posts/359/01.png" data-alt=" VPC 생성 버튼을 눌러줍니다. "><img src="/assets/posts/359/01.png" loading="lazy" width="856" height="111" data-origin-width="856" data-origin-height="111"/></span><figcaption> VPC 생성 버튼을 눌러줍니다. </figcaption>
+</figure>
+<figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="831" data-origin-height="873"><span data-url="/assets/posts/359/02.png" data-phocus="/assets/posts/359/02.png" data-alt=" VPC 설정 "><img src="/assets/posts/359/02.png" loading="lazy" width="831" height="873" data-origin-width="831" data-origin-height="873"/></span><figcaption> VPC 설정 </figcaption>
+</figure>
+
+<p data-ke-size="size16" style="text-align: left;">'VPC 등' 을 설정하셔야 추가적인 정보를 입력 할 수 있습니다.<br>여기서 신경써야 할 것은 가용 영역(AZ)의 수 입니다.<br>추후에 가용 영역을 2개로 변경하는 것도 실습 할 예정입니다.<br>그러므로 현재는 1개로 설정하겠습니다.<br> <br>추가적으로 설정할 것은 없으므로 'VPC 생성' 을 누르겠습니다.</p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="615" data-origin-height="489"><span data-url="/assets/posts/359/03.png" data-phocus="/assets/posts/359/03.png" data-alt=" Create VPC workflow "><img src="/assets/posts/359/03.png" loading="lazy" width="615" height="489" data-origin-width="615" data-origin-height="489"/></span><figcaption> Create VPC workflow </figcaption>
+</figure>
+
+<p data-ke-size="size16" style="text-align: left;">생성이 된 것을 확인할 수 있습니다.<br>기본적으로 설정이 되어야 하는 DNS, S3, subnet, IG, route 가 설정되었습니다.<br> <br>현재 까지의 구성은 아래 사진과 같습니다.</p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="531" data-origin-height="288"><span data-url="/assets/posts/359/04.png" data-phocus="/assets/posts/359/04.png"><img src="/assets/posts/359/04.png" loading="lazy" width="531" height="288" data-origin-width="531" data-origin-height="288"/></span></figure>
+
+<p data-ke-size="size16" style="text-align: left;"> <br>아래 사진은 CIDR 주소 범위를 이해하기 입니다.<br>보시면 10.0.0.0, 1, 2, 3, 255 는 AWS 에서 사용하는 IP 들이고, 나머지 251개를 사용할 수 있습니다.<br>또 추가적으로 10.0.10.0/24 라면 1111 1111 총 256개의 IP 를 사용할 수 있다로만 알아두시면 될 것 같습니다.<br> </p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="573" data-origin-height="721"><span data-url="/assets/posts/359/05.png" data-phocus="/assets/posts/359/05.png"><img src="/assets/posts/359/05.png" loading="lazy" width="573" height="721" data-origin-width="573" data-origin-height="721"/></span></figure>
+
+<h3 style="text-align: left;" data-ke-size="size23">서브넷</h3>
+<h4 style="text-align: left;" data-ke-size="size20">서브넷 생성하기</h4>
+<p data-ke-size="size16" style="text-align: left;">고가용성을 확보하기 위해, 다중 가용 영역에 서비스를 배포하는 것이 중요합니다. 따라서 본 실습에서는 앞에서 생성한 서브넷이 위치한 가용 영역 A 외에 다른 가용 영역인 C에 서브넷을 생성합니다. <br> <br>추가적인 설명을 추가하자면 '다중 가용 영역' 기존에는 한 개의 가용 영역만 만들었으니 여기서 생성한다는 얘기입니다.</p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="672" data-origin-height="38"><span data-url="/assets/posts/359/06.png" data-phocus="/assets/posts/359/06.png" data-alt=" 서브넷 생성 "><img src="/assets/posts/359/06.png" loading="lazy" width="672" height="38" data-origin-width="672" data-origin-height="38"/></span><figcaption> 서브넷 생성 </figcaption>
+</figure>
+<figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="617" data-origin-height="857"><span data-url="/assets/posts/359/07.png" data-phocus="/assets/posts/359/07.png"><img src="/assets/posts/359/07.png" loading="lazy" width="617" height="857" data-origin-width="617" data-origin-height="857"/></span></figure>
+
+<p data-ke-size="size16" style="text-align: left;">전에 VPC 를 만들 때 서브넷이 a 로 만들어졌기 때문에 c를 선택해주고, 이름도 동일하게 숫자만 바꿔서 맞춰줍니다.<br>IPv4 블록은 아래 사진과 같이 처음에 VPC 로 생성한 IPv4 CIDR 블록은 /20 으로 되어 있어 4091개의 IP를 사용할 수 있고, 현재 저는 10.0.20.0/24 로 만들었습니다.</p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="370" data-origin-height="43"><span data-url="/assets/posts/359/08.png" data-phocus="/assets/posts/359/08.png"><img src="/assets/posts/359/08.png" loading="lazy" width="370" height="43" data-origin-width="370" data-origin-height="43"/></span></figure>
+
+<p data-ke-size="size16" style="text-align: left;">서브넷을 하나 추가한 아키텍쳐의 구성은 아래와 같습니다.</p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="529" data-origin-height="292"><span data-url="/assets/posts/359/09.png" data-phocus="/assets/posts/359/09.png"><img src="/assets/posts/359/09.png" loading="lazy" width="529" height="292" data-origin-width="529" data-origin-height="292"/></span></figure>
+
+<h3 style="text-align: left;" data-ke-size="size23">라우팅 테이블</h3>
+<h4 style="text-align: left;" data-ke-size="size20">VPC 라우팅 테이블 개념</h4>
+<p data-ke-size="size16" style="text-align: left;">라우팅 테이블에는 서브넷 또는 게이트 웨이의 <b>네트워크 트래픽이 전송되는 위치를 결정하는데 사용되는 라우팅</b>이라는 규칙 집합이 포함되어 있습니다. <br> <br><b>서브넷 -&gt; 작업 -&gt; 라우팅 테이블 연결 편집</b>을 클릭합니다.<br> </p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="613" data-origin-height="503"><span data-url="/assets/posts/359/10.png" data-phocus="/assets/posts/359/10.png"><img src="/assets/posts/359/10.png" loading="lazy" width="613" height="503" data-origin-width="613" data-origin-height="503"/></span></figure>
+
+<p data-ke-size="size16" style="text-align: left;"> <br>뭔가 숫자를 보기 어렵게 지어둔 것 같네요.<br>1은 a, 2는 c라고 생각하시면 편할 것 같습니다.</p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="661" data-origin-height="555"><span data-url="/assets/posts/359/11.png" data-phocus="/assets/posts/359/11.png" data-alt=" 서브넷 정보 "><img src="/assets/posts/359/11.png" loading="lazy" width="661" height="555" data-origin-width="661" data-origin-height="555"/></span><figcaption> 서브넷 정보 </figcaption>
+</figure>
+<figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="677" data-origin-height="262"><span data-url="/assets/posts/359/12.png" data-phocus="/assets/posts/359/12.png" data-alt=" 라우팅 테이블 정보 "><img src="/assets/posts/359/12.png" loading="lazy" width="677" height="262" data-origin-width="677" data-origin-height="262"/></span><figcaption> 라우팅 테이블 정보 </figcaption>
+</figure>
+
+<p data-ke-size="size16" style="text-align: left;">서브넷에서 라우팅 테이블 rtb를 클릭하면 라우팅 테이블로 이동하게되고, Tim subnet public 2 도 인터넷으로 향하는 경로가 생성되었습니다. 한마디로 현재 생성 된 Tim-<b>subnet</b>-public1, 2 의 라우팅 테이블은 Tim-<b>rtb</b>-public2 를 바라보고 있습니다<br> <br>인터넷 게이트웨이(igw) 가 설정 된 아키텍쳐 구성입니다.</p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="469" data-origin-height="342"><span data-url="/assets/posts/359/13.png" data-phocus="/assets/posts/359/13.png"><img src="/assets/posts/359/13.png" loading="lazy" width="469" height="342" data-origin-width="469" data-origin-height="342"/></span></figure>
+
+<h3 style="text-align: left;" data-ke-size="size23">보안 그룹</h3>
+<h4 style="text-align: left;" data-ke-size="size20">보안 그룹 생성</h4>
+<p data-ke-size="size16" style="text-align: left;">보안 그룹은 인스턴스에 대한 인바운드 및 아웃바운드 트래픽을 제어하는 가상 방화벽 역할을 합니다.<br> <br>보안 그룹 메뉴를 클릭 한 뒤 보안 그룹 생성 버튼 클릭합니다.<br> </p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="485" data-origin-height="395"><span data-url="/assets/posts/359/14.png" data-phocus="/assets/posts/359/14.png" data-alt=" sg는 security group "><img src="/assets/posts/359/14.png" loading="lazy" width="485" height="395" data-origin-width="485" data-origin-height="395"/></span><figcaption> sg는 security group </figcaption>
+</figure>
+
+<p data-ke-size="size16" style="text-align: left;">VPC 는 이번에 새로 생성한 Tim-vpc를 선택합니다.</p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="805" data-origin-height="337"><span data-url="/assets/posts/359/15.png" data-phocus="/assets/posts/359/15.png" data-alt=" 인바운드 규칙 "><img src="/assets/posts/359/15.png" loading="lazy" width="805" height="337" data-origin-width="805" data-origin-height="337"/></span><figcaption> 인바운드 규칙 </figcaption>
+</figure>
+
+<p data-ke-size="size16" style="text-align: left;">소스에 '내 IP'를 클릭해주시고,<br>SSH, HTTP 을 추가하고 '보안 그룹 생성' 버튼을 클릭합니다.</p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="673" data-origin-height="572"><span data-url="/assets/posts/359/16.png" data-phocus="/assets/posts/359/16.png" data-alt=" sg 생성 완료 "><img src="/assets/posts/359/16.png" loading="lazy" width="673" height="572" data-origin-width="673" data-origin-height="572"/></span><figcaption> sg 생성 완료 </figcaption>
+</figure>
+
+<p data-ke-size="size16" style="text-align: left;">좋습니다.<br> <br>위의 과정을 잘 따라왔다면 <b>VPC</b> 가 한 개 생성되었고,<br> <br><b>서브넷</b>도 ap-northeast-2a, c 생성하였습니다.<br> ㄴ subnet-public1 (10.0.0.0/20)<br> ㄴ subnet-public2 (10.0.20.0/24)<br> <br><b>라우팅 테이블</b>도 2개의 서브넷을 연결하여 생성되어 있습니다.<br>라우팅 테이블이 생성되면서 자동으로 <b>인터넷 게이트웨이</b>도 생성 된 것을 확인할 수 있습니다. <br> <br>마지막으로 <b>보안 그룹</b> 인바운드로 22, 80번 포트를 열어놨습니다. <br> <br>VPC 생성까지 완료하였습니다.<br> <br>다음은 '웹 서버 생성하기' AMI 생성으로 찾아뵙겠습니다.<br> <br>감사합니다.</p></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/359">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ubuntu 서버 미사용 디스크를 /data 로 마운트하기 (LVM 구성) — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/443">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>Ubuntu 서버 미사용 디스크를 /data 로 마운트하기 (LVM 구성)</h1>
+  <div class="meta"><span class="cat">DevOps</span> · 2026-09-15</div>
+  <article>
+<p data-ke-size="size16"><span >서버 용량이 부족하다고 해서 확인해 봤더니, 정작 4TB짜리 하드디스크 3개가 아무 일도 안 하고 놀고 있었습니다. 총 11TB 가까운 공간입니다. 이 글은 디스크들을 찾아내서 /data 하나로 묶어 쓸 수 있게 만든 과정입니다.</span></p>
+<h3 data-ke-size="size23"><span >1. 문제 발견</span></h3>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="481" data-origin-height="173"><span data-url="/assets/posts/443/01.png" data-phocus="/assets/posts/443/01.png" data-alt="df -h 실행 결과"><img src="/assets/posts/443/01.png" loading="lazy" width="481" height="173" data-origin-width="481" data-origin-height="173"/></span><figcaption>df -h 실행 결과</figcaption>
+</figure>
+</p>
+<p data-ke-size="size16"><span ><span ><b>df</b>는 <b>Disk Free</b></span>, 즉 "지금 쓸 수 있는 공간이 얼마나 남았나"를 보여주는 명령입니다. <span ><b>-h</b>는 <b>human-readable</b></span>의 약자로, 숫자를 사람이 읽기 좋은 GB&middot;TB 단위로 바꿔줍니다. 결과를 보면 / (루트, 시스템의 최상위 폴더)가 233GB 중 166GB를 쓰고 있습니다.</span></p>
+<h3 data-ke-size="size23"><span >2. 디스크 목록 확인: <span ><b>fdisk</b></span></span></h3>
+<p data-ke-size="size16"><span >df가 보여주지 않는 걸 보려면 다른 명령이 필요합니다.&nbsp;</span></p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="594" data-origin-height="502"><span data-url="/assets/posts/443/02.png" data-phocus="/assets/posts/443/02.png" data-alt="sudo fdisk -l"><img src="/assets/posts/443/02.png" loading="lazy" width="594" height="502" data-origin-width="594" data-origin-height="502"/></span><figcaption>sudo fdisk -l</figcaption>
+</figure>
+</p>
+<p data-ke-size="size16"><span >명령어 결과를 보면 알 수 있듯이 서로 다른 걸 보고 있다는 걸 알 수 있습니다.</span></p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span ><b>fdisk -l = "이 컴퓨터에 꽂혀 있는 디스크가 뭐가 있나"</b></span></li>
+<li><span ><b>df -h = "그중에 실제로 쓰고 있는 게 뭔가?"</b></span></li>
+</ul>
+<h4 data-ke-size="size20"><span >두 결과를 겹쳐 본 결과</span></h4>
+<table style="border-collapse: collapse; width: 100%; height: 126px;" border="1" data-ke-align="alignLeft" data-ke-style="style13">
+<tbody>
+<tr style="height: 18px;">
+<td style="width: 33.3333%; height: 18px;"><span >장치</span></td>
+<td style="width: 33.3333%; height: 18px;"><span >크기</span></td>
+<td style="width: 33.3333%; height: 18px;"><span >상태</span></td>
+</tr>
+<tr style="height: 18px;">
+<td style="width: 33.3333%; height: 18px;"><span >nvme0n1p2</span></td>
+<td style="width: 33.3333%; height: 18px;"><span >237GB</span></td>
+<td style="width: 33.3333%; height: 18px;"><span >/ 사용 중 (76%)</span></td>
+</tr>
+<tr style="height: 18px;">
+<td style="width: 33.3333%; height: 18px;"><span >sda1</span></td>
+<td style="width: 33.3333%; height: 18px;"><span >1GB</span></td>
+<td style="width: 33.3333%; height: 18px;"><span >/boot/efi 사용 중</span></td>
+</tr>
+<tr style="height: 18px;">
+<td style="width: 33.3333%; height: 18px;"><span >sda2</span></td>
+<td style="width: 33.3333%; height: 18px;"><span >2GB</span></td>
+<td style="width: 33.3333%; height: 18px;"><span >/boot 사용 중</span></td>
+</tr>
+<tr style="height: 18px;">
+<td style="width: 33.3333%; height: 18px;"><span ><b>sda3</b></span></td>
+<td style="width: 33.3333%; height: 18px;"><span ><b>3.6TB</b></span></td>
+<td style="width: 33.3333%; height: 18px;"><span ><b>마운트 안 됨</b></span></td>
+</tr>
+<tr style="height: 18px;">
+<td style="width: 33.3333%; height: 18px;"><span >sdb</span></td>
+<td style="width: 33.3333%; height: 18px;"><span >3.6TB</span></td>
+<td style="width: 33.3333%; height: 18px;"><span >파티션 조차 없음</span></td>
+</tr>
+<tr style="height: 18px;">
+<td style="width: 33.3333%; height: 18px;"><span >sdc</span></td>
+<td style="width: 33.3333%; height: 18px;"><span >3.6TB</span></td>
+<td style="width: 33.3333%; height: 18px;"><span >파티션 조차 없음</span></td>
+</tr>
+</tbody>
+</table>
+<h4 data-ke-size="size20"><span >3. 마운트(sda3) 안 됐다고 빈 디스크가 아니다</span></h4>
+<p data-ke-size="size16"><span ><span ><b>sda에는 /boot와 /boot/efi 가 들어 있다. 이건 서버가 켜질 때 가장 먼저 읽는 부분이다.</b></span> 그런데 그 뒤에 3.6TB짜리 파티션이 하나 더 있다는 말은 전형적으로 원래 이 디스크에 운영체제를 통째로 설치했다가, 나중에 빠른 NVMe로 옮긴 흔적으로 보인다. 즉, sda3 안에 예전 운영체제와 데이터가 그대로 들어있을 가능성이 있다.</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size18"><span ><b>확인 방법</b></span></p>
+<pre id="code_1789428466707" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code># lsblk는 디스크를 나무 구조로 보여주고 -f 를 붙이면 파일시스템 정보까지 보여준다
+lsblk -f /dev/sda
+# 결과
+NAME   FSTYPE FSVER LABEL UUID
+sda
+├─sda1      vfat   FAT32       E74B-DC41                                 1G     1% /boot/efi
+├─sda2      ext4   1.0         a8cee5a5-f550-492f-b127-bf64ca26189c    1.7G     7% /boot
+└─sda3</code></pre>
+<p data-ke-size="size16"><span ><b>sda3 줄을 보면 FSTYPE 칸이 비어 있는 걸 확인할 수 있다.</b></span></p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >FSTYPE(파일시스템 종류)은 포맷을 해야 생긴다</span></li>
+<li><span >이게 비어 있다 = 한 번도 포맷한 적이 없다 = 안에 아무것도 없다</span></li>
+</ul>
+<p data-ke-size="size16"><span ><span ><b>blkid(block device identify; 시스템에 연결된 블록 장치(디스크, 파티션, USB 등)의 신원 정보를 조회하는 명령어)</b></span> 명령어로 한번 더 확인해보자</span></p>
+<pre id="code_1789428651326" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>sudo blkid /dev/sda3
+# 결과
+/dev/sda3: PARTUUID="908d27dc-ad75-4ae0-b6f1-d86e4ca9c8d2"</code></pre>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >PARTUUID = 파티션(칸)을 나눌 때 생기는 번호</span></li>
+<li><span ><b>UUID = 파일시스템을 만들 때 생기는 번호</b></span></li>
+</ul>
+<h3 data-ke-size="size23"><span >4. 3개(sda3, sdb, sdc)의 하드디스크를 어떻게 묶을까?</span></h3>
+<table style="border-collapse: collapse; width: 100%;" border="1" data-ke-align="alignLeft" data-ke-style="style13">
+<tbody>
+<tr>
+<td style="width: 25%;"><span >방식</span></td>
+<td style="width: 25%;"><span >쓸 수 있는 용량</span></td>
+<td style="width: 25%;"><span >하나가 고장 나면</span></td>
+<td style="width: 25%;"><span >나중에 늘리기</span></td>
+</tr>
+<tr>
+<td style="width: 25%;"><span >각각 따로 마운트</span></td>
+<td style="width: 25%;"><span >3.6T씩 3개</span></td>
+<td style="width: 25%;"><span >그것만 손실</span></td>
+<td style="width: 25%;"><span >경로가 계속 늘어남</span></td>
+</tr>
+<tr>
+<td style="width: 25%;"><span ><b>LVM으로 묶기</b></span></td>
+<td style="width: 25%;"><span ><b>10.9T 하나</b></span></td>
+<td style="width: 25%;"><span ><b>전체 손실</b></span></td>
+<td style="width: 25%;"><span ><b>쉬움</b></span></td>
+</tr>
+<tr>
+<td style="width: 25%;"><span >RAID 1</span></td>
+<td style="width: 25%;"><span >3.6T</span></td>
+<td style="width: 25%;"><span >버팀</span></td>
+<td style="width: 25%;"><span >어려움</span></td>
+</tr>
+</tbody>
+</table>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >저는 LVM을 선택했습니다. 이유는 두 가지 입니다.</span></p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >저장 경로가 /data 하나로 끝나서 프로그램 설정이 단순해집니다</span></li>
+<li><span >나중에 디스크를 더 사서 꽂으면 서비스를 끄지 않고 용량을 늘릴 수 있습니다</span></li>
+</ul>
+<h3 data-ke-size="size23"><span ><b>5. LVM(Logical Volume Manager, 논리 볼륨 관리자)이란?</b></span></h3>
+<p data-ke-size="size16"><span >쉽게 말하면 여러 개의 물탱크를 파이프로 연결해서 큰 저수조 하나처럼 쓰는 기술입니다.</span></p>
+<table style="border-collapse: collapse; width: 100%;" border="1" data-ke-align="alignLeft" data-ke-style="style13">
+<tbody>
+<tr>
+<td style="width: 13.1395%;"><span >층</span></td>
+<td style="width: 25.1163%;"><span >이름</span></td>
+<td style="width: 36.7442%;"><span >하는 일</span></td>
+<td style="width: 25%;"><span >물탱크로 치면</span></td>
+</tr>
+<tr>
+<td style="width: 13.1395%;"><span >1층</span></td>
+<td style="width: 25.1163%;"><span >PV (Physical Volume)</span></td>
+<td style="width: 36.7442%;"><span >디스크에 "나 LVM 부품이야" 표시</span></td>
+<td style="width: 25%;"><span >탱크에 연결구 달기&nbsp;</span></td>
+</tr>
+<tr>
+<td style="width: 13.1395%;"><span >2층</span></td>
+<td style="width: 25.1163%;"><span >VG (Volume Group)</span></td>
+<td style="width: 36.7442%;"><span >PV들을 묶어 큰 공간 풀을 만듦</span></td>
+<td style="width: 25%;"><span >파이프로 연결해 저수조로</span></td>
+</tr>
+<tr>
+<td style="width: 13.1395%;"><span >3층</span></td>
+<td style="width: 25.1163%;"><span >LV (Logical Volume)</span></td>
+<td style="width: 36.7442%;"><span >풀에서 실제 쓸 공간을 떼어냄</span></td>
+<td style="width: 25%;"><span >수도꼭지 하나 빼기</span></td>
+</tr>
+</tbody>
+</table>
+<h3 data-ke-size="size23"><span >6. 시작 전 확인</span></h3>
+<pre id="code_1789429215346" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>which pvcreate vgcreate lvcreate
+# 결과
+/usr/sbin/pvcreate
+/usr/sbin/vgcreate
+/usr/sbin/lvcreate</code></pre>
+<h3 data-ke-size="size23"><span >7. 실행: PV -&gt; VG -&gt; LV</span></h3>
+<h4 data-ke-size="size20"><span >1단계 - pvcreate</span></h4>
+<pre id="code_1789429302001" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>sudo pvcreate /dev/sda3 /dev/sdb /dev/sdc
+# 결과
+Physical volume "/dev/sda3" successfully created.
+Physical volume "/dev/sdb" successfully created.
+Physical volume "/dev/sdc" successfully created.</code></pre>
+<h4 data-ke-size="size20"><span >2단계 - vgcreate</span></h4>
+<pre id="code_1789429391798" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>sudo vgcreate vg_data /dev/sda3 /dev/sdb /dev/sdc
+# 결과
+Volume group "vg_data" successfully created</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >PV들을 묶어 하나의 큰 저장 공간 풀을 만듭니다. vg_data 는 원하는 이름으로 수정 가능하고 이 순간 3.6T + 3.6T + 3.6T가 합쳐저 약 10.9T 짜리 풀이 됩니다.</span></p>
+<h4 data-ke-size="size20"><span >3단계 - lvcreate</span></h4>
+<pre id="code_1789429481391" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>sudo lvcreate -l 100%FREE -n lv_data vg_data
+# 결과
+Logical volume "lv_data" created.</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >풀에서 공간을 떼어내 실제로 포맷하고 마운트할 가상의 디스크를 만듭니다.</span></p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >-l 100%FREE: 남은 공간을 전부 사용</span></li>
+<li><span >-n lv_data: 이름 지정</span></li>
+<li><span >마지막 vg_data: 어느 풀에서 떼어낼지</span></li>
+</ul>
+<p data-ke-size="size16"><span >실행하면 /dev/vg_data/lv_data&nbsp; 라는 경로가 생기고 이제부터는 이걸 그냥 디스크 하나 처럼 다루면 됩니다.</span></p>
+<pre id="code_1789429699633" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>sudo pvs     # PV 목록
+sudo vgs     # VG 목록과 총 용량
+sudo lvs     # LV 목록</code></pre>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="793" data-origin-height="206"><span data-url="/assets/posts/443/03.png" data-phocus="/assets/posts/443/03.png"><img src="/assets/posts/443/03.png" loading="lazy" width="793" height="206" data-origin-width="793" data-origin-height="206"/></span></figure>
+</p>
+<h3 data-ke-size="size23"><span >8. 포맷하기</span></h3>
+<pre id="code_1789429809440" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>sudo mkfs.ext4 -m 0 -L DATA /dev/vg_data/lv_data
+# 결과
+mke2fs 1.46.5 (30-Dec-2021)
+/dev/vg_data/lv_data contains a ext4 file system labelled 'DATA'
+        created on Mon Sep 14 23:49:50 2026
+Proceed anyway? (y,N) y
+Creating filesystem with 2929461248 4k blocks and 366186496 inodes
+Filesystem UUID: 82e6f442-aacb-41f6-b6ea-ff01bb4b5a2c
+Superblock backups stored on blocks:
+        32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208,
+        4096000, 7962624, 11239424, 20480000, 23887872, 71663616, 78675968,
+        102400000, 214990848, 512000000, 550731776, 644972544, 1934917632,
+        2560000000
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (262144 blocks):
+done
+Writing superblocks and filesystem accounting information:
+done</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span ><span ><b>mkfs</b>는 <b>make filesystem</b></span>, 즉 포맷입니다. 빈 공간에 파일을 이렇게 정리해서 넣겠다"는 규칙을 세우는 작업입니다. ext4는 리눅스에서 가장 널리 쓰이는 규칙입니다.</span></p>
+<h4 data-ke-size="size20"><span ><b>옵션 중 -m 0은 특히 중요하다</b></span></h4>
+<p data-ke-size="size16"><span >ext4는 기본적으로 전체 용량의 5%를 관리자 전용으로 몰래 빼놓습니다. 시스템 디스크가 꽉&nbsp; 찼을 때도 관리자는 최소한의 작업을 할 수 있게 하려는 안전장치입니다. 그런데 10.9TB의 5%면 약 550GB입니다. 데이터 저장용 디스크에는 필요 없는 기능이니 -m 0으로 꺼야 합니다.</span></p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span ><b>-T largefile4: 큰 파일(영상 등) 위주일 때 관리 정보를 줄여 효율을 높입니다. 작은 파일이 수백만 개 쌓일 예정이면 이 옵션은 빼세요.</b></span></li>
+<li><span >-L data: 이름표를 붙여둡니다. 나중에 알아보기 편합니다.</span></li>
+</ul>
+<h3 data-ke-size="size23"><span ><b>9. 마운트와 자동 등록</b></span></h3>
+<pre id="code_1789430121034" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>sudo mkdir -p /data
+sudo mount /dev/vg_data/lv_data /data
+df -h /data</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >여기까지 하면 /data가 생기고 바로 쓸 수 있습니다. 그런데 이 상태로 재부팅하면 사라집니다. mount 명령은 지금 이 순간만 유효하기 때문입니다.</span></p>
+<h4 data-ke-size="size20"><span ><b>영구 등록 (fstab)</b></span></h4>
+<p data-ke-size="size16"><span >재부팅해도 자동으로 마운트되게 하려면 /etc/fastab 파일에 등록해야 합니다. 이 파일은 리눅스가 켜질 때 읽는 "어떤 디스크를 어디에 연결할지" 목록표입니다.</span></p>
+<pre id="code_1789430244784" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>sudo blkid /dev/vg_data/lv_data
+# 결과
+/dev/vg_data/lv_data: LABEL="DATA" UUID="82e6f442-aacb-41f6-b6ea-ff01bb4b5a2c" BLOCK_SIZE="4096" TYPE="ext4"</code></pre>
+<p data-ke-size="size16"><span >그리고 /etc/fstab 마지막 줄에 추가합니다.</span></p>
+<pre id="code_1789430360171" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code># 확인한 UUID를 복사
+sudo vi /etc/fstab
+# 마지막 줄에 추가
+UUID=82e6f442-aacb-41f6-b6ea-ff01bb4b5a2c  /data  ext4  defaults,noatime,nofail,x-systemd.device-timeout=10  0  2</code></pre>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >장치명(/dev/sdb) 대신 UUID를 쓰는 이유가 있습니다. 장치명은 고정이 아닙니다. 디스크를 추가하거나 케이블 순서가 바뀌면 sdb가 sdc가 도리 수 있습니다. 그러면 엉뚱한 디스크가 마운트됩니다. UUID는 그 파일시스템의 고유 번호라 절대 안 바뀝니다.</span></li>
+<li><span >nofail은 "이 디스크 없어도 일반 부팅은 해라" 라는 뜻</span></li>
+</ul>
+<h4 data-ke-size="size20"><span >검증</span></h4>
+<pre id="code_1789430591200" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code># 재부팅 전에 문법이 맞는지 확인하는 용도
+sudo mount -a
+
+# 확인
+df -h /data
+sudo chown -R 사용자명:그룹명 /data</code></pre>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="567" data-origin-height="55"><span data-url="/assets/posts/443/04.png" data-phocus="/assets/posts/443/04.png"><img src="/assets/posts/443/04.png" loading="lazy" width="567" height="55" data-origin-width="567" data-origin-height="55"/></span></figure>
+</p>
+<h3 data-ke-size="size23"><span >정리</span></h3>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >df -h와 fdisk -l을 <b>겹쳐서</b> 보면 안 쓰는 디스크가 보입니다</span></li>
+<li><span >마운트 안 됐다고 빈 디스크가 아닙니다. lsblk -f로 <b>반드시 확인</b> 후 진행하세요</span></li>
+<li><span >LVM은 pvcreate &rarr; vgcreate &rarr; lvcreate 3단계로 쌓습니다</span></li>
+<li><span >mkfs.ext4에 -m 0을 빼면 수백 GB가 그냥 사라집니다</span></li>
+<li><span >fstab에는 <b>UUID</b>와 nofail을 쓰고, 재부팅 전에 <b>mount -a로 검증</b>하세요</span></li>
+</ul></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/443">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

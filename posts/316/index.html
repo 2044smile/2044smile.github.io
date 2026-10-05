@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>[Django Rest Framework] ModelViewset 동작에 대해 (queryset, get_object) — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/316">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>[Django Rest Framework] ModelViewset 동작에 대해 (queryset, get_object)</h1>
+  <div class="meta"><span class="cat">Backend</span> · 2020-08-20</div>
+  <article>
+<p data-ke-size="size16"><b>안녕하세요.</b></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">오늘은 DRF ModelViewSet의 동작에 대해 자세히 알아보려고 합니다.</p>
+<p data-ke-size="size16">참고 할 자료는 viewsets.py 파일과 공식문서를 보면서 포스팅해보겠습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<h2 data-ke-size="size26"><b>ModelViewSet</b></h2>
+<pre id="code_1597300287028" class="python" data-ke-language="python" data-ke-type="codeblock"><code># Django Rest Framework tutorial
+
+class AccountViewSet(viewsets.ModelViewSet):
+    """
+    A simple ViewSet for viewing and editing accounts.
+    """
+    queryset = Account.objects.all()
+    serializer_class = AccountSerializer
+    permission_classes = [IsAccountAdminOrReadOnly]</code></pre>
+<p data-ke-size="size16">튜토리얼에서 가져온 코드입니다.</p>
+<p data-ke-size="size16">우리가 ModelViewSet 을 사용하려면 기본적인 틀이 된다고 볼 수 있습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><b>CBV의 장점이자 단점은</b> 사용법을 익혀야 된다는 것이죠. 처음에는 AccountViewSet 안에 선언한 <b>queryset</b>이 정확히 무슨 역할을 하는지 모르고 만들기에 급급했던 것 같습니다. 오늘 한번 제대로 알아보죠!!</p>
+<p data-ke-size="size16">&nbsp;</p>
+<h2 data-ke-size="size26"><b>ModelViewSet action</b></h2>
+<p data-ke-size="size16"><b>queryse, get_object</b> 의 쓰임을 알기 위해서는 <b>action</b> 에 대해 알아야 합니다.</p>
+<pre id="code_1597300640290" class="python" data-ke-language="python" data-ke-type="codeblock"><code># Django Rest Framework viewsets.py
+
+class ModelViewSet(mixins.CreateModelMixin,
+                   mixins.RetrieveModelMixin,
+                   mixins.UpdateModelMixin,
+                   mixins.DestroyModelMixin,
+                   mixins.ListModelMixin,
+                   GenericViewSet):
+    """
+    A viewset that provides default `create()`, `retrieve()`, `update()`,
+    `partial_update()`, `destroy()` and `list()` actions.
+    """
+    pass</code></pre>
+<p data-ke-size="size16">친절하게도 주석으로 우리가 사용할 수 있는 action 이 무엇인지 알려주고 있습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><b>- create (method POST, 생성)</b></p>
+<p data-ke-size="size16"><b>- list (method GET, 리스트)</b></p>
+<p data-ke-size="size16"><b>- retrieve (method GET, Detail 특정 pk ex) posts/&lt;int:pk&gt;/)</b></p>
+<p data-ke-size="size16"><b>- update (method PUT)</b></p>
+<p data-ke-size="size16"><b>- partial_update (method PATCH)</b></p>
+<p data-ke-size="size16"><b>- destroy (method DELETE)</b></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">ModelMixin 은 후에 알아보도록 하고, GenericViewSet 에 대해 알아보겠습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<h2 data-ke-size="size26"><b>GenericViewSet</b></h2>
+<pre id="code_1597300982195" class="python" data-ke-language="python" data-ke-type="codeblock"><code>class GenericViewSet(ViewSetMixin, generics.GenericAPIView):
+    """
+    The GenericViewSet class does not provide any actions by default,
+    but does include the base set of generic view behavior, such as
+    the `get_object` and `get_queryset` methods.
+    
+    GenericViewSet 클래스는 기본적으로 어떤 작업도 제공하지 않습니다.
+     그러나 다음과 같은 일반보기 동작의 기본 세트를 포함합니다.
+     `get_object` 및`get_queryset` 메소드.
+    """
+    pass</code></pre>
+<p data-ke-size="size16">우리가 찾고 있던 get_object 와 get_queryset 이 보입니다.</p>
+<p data-ke-size="size16">GenericViewSet 을 상속받으면 저것들을 사용할 수 있다는군요.</p>
+<p data-ke-size="size16">그래서 ModelViewSet 에서 def get_queryset, def get_object 와 같은 것들을 쓸 수 있었던 것 같습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">하지만 우리가 원하는 무슨 동작을 하는지에 대해서는 아직 얻지 못했습니다.</p>
+<p data-ke-size="size16">다음은 generics.GenericAPIView 를 살펴볼까요?</p>
+<p data-ke-size="size16">&nbsp;</p>
+<h2 data-ke-size="size26"><b><span >generics.GenericAPIView</span></b></h2>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthContent" data-origin-width="566" data-origin-height="664"><span data-url="/assets/posts/316/01.png" data-phocus="/assets/posts/316/01.png" data-alt="generics.py"><img src="/assets/posts/316/01.png" loading="lazy" width="480" height="664" data-origin-width="566" data-origin-height="664"/></span><figcaption>generics.py</figcaption>
+</figure>
+</p>
+<p data-ke-size="size16">우리가 찾고 싶던 queryset, get_queryset 좀 더 내려보면 get_object 도 보이네요!</p>
+<p data-ke-size="size16">여기는 코드량이 많아서 필요한 부분만 가져와서 설명을 달아보도록 하겠습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<h3 data-ke-size="size23"><b>queryset</b></h3>
+<p data-ke-size="size16">주석내용을 해석해보면</p>
+<p data-ke-size="size16"><b>get_serializer_class, get_queryset</b> 와 같은 것들을 오버라이드하여 사용할 수 있고, 뷰 메서드를 재정의 하는 경우(커스텀하게 쓰는 경우) 에는 위와 같은 메서드를 호출해서 사용하라고하네요. <b>queryset은 한번만 호출되고 후속 요청들에 대해서는 결과가 캐시가 된다고 합니다.</b></p>
+<p data-ke-size="size16">그래서 뭔가 쿼리셋에서 커스텀하게 결과를 도출하고 싶을 때는 <b>get_queryset</b> 을 사용해야하는 것 같습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<h3 data-ke-size="size23"><b>lookup_field</b></h3>
+<p data-ke-size="size16"><b>lookup_field</b>는 위에서 retrieve 와 같이 &lt;int:pk&gt; 같은 lookup_field를 재정의 할 수 있는 것 같네요.</p>
+<p data-ke-size="size16"><span >ex) </span>profile/&lt;slug:user_id&gt;/name -&gt; lookup_field = 'user_id' 이런식으로도 사용할 수 있겠네요.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">이것보다 더 복잡한 요청은 <b>get_object()</b> 를 이용하여 재정의 할 수 있다고 합니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<h3 data-ke-size="size23"><b>filter_backends</b></h3>
+<p data-ke-size="size16">쿼리 세트 필터링에 사용할 필터 백엔드 클래스 입니다. 사용 예시는 아래와 같습니다.</p>
+<pre id="code_1597302850537" class="python" data-ke-language="python" data-ke-type="codeblock"><code># Django Rest Framework Tutorial 
+# https://www.django-rest-framework.org/api-guide/filtering/#djangofilterbackend
+
+
+# CASE 1
+class ProductList(generics.ListAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['category', 'in_stock']
+    
+    
+# CASE 2
+from rest_framework import viewsets, filters
+
+
+class UserViewSet(viewsets.ModelViewset)
+    filter_backends = [filters.SearchFilter, filters,OrderingFilter]
+</code></pre>
+<p data-ke-size="size16">SearchFilter 는 모델의 필드로 검색할 수 있는 옵션이고, Ordering 은 -created_at 이런식으로 사용할 수 있습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<h3 data-ke-size="size23"><b>get_object</b></h3>
+<p data-ke-size="size16">self.queryset 이 기본 값 입니다.</p>
+<p data-ke-size="size16">self.queryset 은 한 번 실행되고 후속 요청에 대해서는 캐시되지만, get_queryset 메서드는 매번 사용됩니다.</p>
+<p data-ke-size="size16"><b>수신 요청에 따라 다른 쿼리셋은 제공해야하는 경우에 재정의 할 수 있습니다.</b></p>
+<pre id="code_1597884077768" class="python" data-ke-language="python" data-ke-type="codeblock"><code>def get_object(self):
+    """
+    Returns the object the view is displaying.
+
+    You may want to override this if you need to provide non-standard
+    queryset lookups.  Eg if objects are referenced using multiple
+    keyword arguments in the url conf.
+    """
+    queryset = self.filter_queryset(self.get_queryset())
+
+    # Perform the lookup filtering.
+    lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+
+    assert lookup_url_kwarg in self.kwargs, (
+        'Expected view %s to be called with a URL keyword argument '
+        'named "%s". Fix your URL conf, or set the `.lookup_field` '
+        'attribute on the view correctly.' %
+        (self.__class__.__name__, lookup_url_kwarg)
+    )
+
+    filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
+    obj = get_object_or_404(queryset, **filter_kwargs)
+
+    # May raise a permission denied
+    self.check_object_permissions(self.request, obj)
+
+    return obj</code></pre>
+<p data-ke-size="size16">queryset = <b>self.filter_queryset</b>(self.get_queryset())</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">그냥 쿼리셋만 뽑아서 queryset 에 저장시키면되는데 왜 filter_queryset 로 필터링을 하고 꺼낼까요?</p>
+<p data-ke-size="size16">&nbsp;</p>
+<h4 data-ke-size="size20"><b>filter_queryset</b></h4>
+<p data-ke-size="size16"><b>주석부분을 해석해보면 주어진 queryset 을 ViewSet 에서 정의한 filter_backends 로 필터링 합니다.</b></p>
+<p data-ke-size="size16"><b>구성된 필터링 백엔드를 기본 쿼리셋에 적용하려는 경우 사용합니다.</b></p>
+<pre id="code_1597884271663" class="python" data-ke-language="python" data-ke-type="codeblock"><code>def filter_queryset(self, queryset):
+    """
+    Given a queryset, filter it with whichever filter backend is in use.
+
+    You are unlikely to want to override this method, although you may need
+    to call it either from a list view, or from a custom `get_object`
+    method if you want to apply the configured filtering backend to the
+    default queryset.
+    """
+    for backend in list(self.filter_backends):
+        queryset = backend().filter_queryset(self.request, queryset, self)
+    return queryset</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><i><b>Reference 에 참고한 블로그의 내용을 예시로 들어보겠습니다.</b></i></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">ViewSet에서 Request 파라미터로 받은 값이랑 일치하는 데이터를 조회하려고 합니다.</p>
+<p data-ke-size="size16">get_queryset 에서 파라미터를 받아 filter 조건에 추가해줘야 되는 작업을 filter_backends 를 이용하면 간편하게 만들 수 있다고 합니다.</p>
+<pre id="code_1597884648869" class="python" data-ke-language="python" data-ke-type="codeblock"><code>class ProductList(generics.ListAPIView): 
+    serializer_class = PurchaseSerializer
+    
+    def get_queryset(self): 
+    	category = self.kwargs['category'] 
+        in_stock = self.kwargs['in_stock']
+        return Purchase.objects.filter(category=category,in_stock=in_stock)
+</code></pre>
+<p data-ke-size="size16">위와 같이 번거로운 작업을 아래 예시처럼 명시만해주면 사용할 수 있다는 것이죠.</p>
+<pre id="code_1597884721252" class="python" data-ke-language="python" data-ke-type="codeblock"><code>class ProductList(generics.ListAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filter_fields = ('category', 'in_stock')
+</code></pre>
+<p data-ke-size="size16">추가로 FilterSet 을 만들어서 사용하는 방법도 있으니 FilterSet 을 자세히 알아보고 싶으신분은 공식문서나 Reference 를 참고하시면 될 거 같습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<h4 data-ke-size="size20"><b>self.lookup_url_kwarg or self.lookup_field</b></h4>
+<p data-ke-size="size16">이것 또한 ViewSet 에 정의 할 수 있는 lookup_field 와 lookup_url_kwarg를 검증하고, object 를 get 할 때 필터에 맞는 경우를 가져옵니다. get 이라는 동작이 한 개의 데이터를 가져오는 것으로 알고 있고 여러개의 데이터가 리턴된다면 404 오류가 발생할지 궁금하네요.</p>
+<p data-ke-size="size16"><span >(get_object 라는 것 자체가 한 개의 오브젝트를 리턴해주는 것인데 필터 조건에 따라 여러개가 나올 수 있다면?)</span></p>
+<p data-ke-size="size16">ORM 으로는 get 으로 예시로 3개의 오브젝트를 꺼낼 시 blah blah ~ return 3! 이런식으로 오류가 발생하는데.. 비슷하게 동작하겠죠?</p>
+<p data-ke-size="size16">&nbsp;</p>
+<h4 data-ke-size="size20"><b>check_object_permissions</b></h4>
+<p data-ke-size="size16">마지막으로 @permission_classess 나 ViewSet 안에서의 permission_classess 를 확인합니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<h4 data-ke-size="size20"><b>return</b></h4>
+<p data-ke-size="size16">필터링이 되고, permission 검증이 끝난 object 가 리턴됩니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">해당 포스팅에서 get_queryset 에서도 알아보려고 하였으나 글 내용이 너무 길어지는거 같아 다음 포스팅에서 작성하도록 해보겠습니다.</p>
+<p data-ke-size="size16">언제나 피드백은 환영입니다! 좋은 의견이나 제가 생각한 것과 다르게 동작하는 부분이 있으면 댓글로 달아주시면 감사하겠습니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><b>감사합니다.</b></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">&nbsp;</p>
+<h4 data-ke-size="size20"><b>Reference</b></h4>
+<p data-ke-size="size16"><b>-&nbsp;</b><a href="https://americanopeople.tistory.com/273" target="_blank" rel="noopener"><b>filter_queryset</b></a><b></b></p>
+<p data-ke-size="size16">- <b><a href="https://www.django-rest-framework.org/api-guide/filtering/#djangofilterbackend" target="_blank" rel="noopener">www.django-rest-framework.org/api-guide/filtering/#djangofilterbackend</a></b></p></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/316">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

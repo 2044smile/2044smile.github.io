@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Python JIRA 라이브러리로 JIRA 이슈 생성하기 — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/331">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>Python JIRA 라이브러리로 JIRA 이슈 생성하기</h1>
+  <div class="meta"><span class="cat">Backend</span> · 2021-03-20</div>
+  <article>
+<p>&nbsp;글을 시작하기 전에 간단하게 JIRA가 무엇인지 왜 다른 모니터링 툴이 아닌 JIRA 라이브러리를 사용하였는지에 대해 알아보겠습니다.<br />먼저 JIRA란 무엇일까요? <b>Atlassian 사에서 만든 이슈관리 및 프로젝트 관리 용도로 사용할 수 있는 툴</b> 입니다. 왜 다른 <b>Sentry</b> 같은 에러 로깅 및 모니터링 툴을 사용하지 않고, JIRA 라이브러리를 사용한 이유는 <b>비동기로 처리되는 로직에서 크리티컬한 에러를 JIRA 이슈로 관리</b>할 수 있고, 해당 로직을 담당하고 있는 담당자를 멘션으로 호출하여 알림까지 제공이 되기 때문에 필요한 부분에 간단하게 사용할 수 있다 라고 판단되어 사용하게 되었습니다.</p>
+<h2 data-ke-size="size26">JIRA Python Library</h2>
+<p>Python(3.x)에서 JIRA REST API를 쉽게 사용할 수 있도록 만들어진 오픈소스 라이브러리입니다.</p>
+<p><b>JQL</b>이라는 쿼리언어를 지원하여 직접 쿼리를 작성하여 원하는 결과를 얻을 수 있습니다.</p>
+<h2 data-ke-size="size26">INSTALL</h2>
+<pre id="code_1615710328778" class="python" data-ke-language="python" data-ke-type="codeblock"><code>pip install jira</code></pre>
+<h2 data-ke-size="size26">How to use?</h2>
+<h2 data-ke-size="size26">1. Jira API 토큰 발행</h2>
+<p>우측 상단에 프로필 클릭 &gt; 프로필 및 설정 &gt; 보안 &gt; API 토큰 &gt; API 토큰 만들기</p>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/331/01.png" data-phocus="/assets/posts/331/01.png" data-alt="Jira API 토큰 발행&amp;amp;nbsp;"><img src="/assets/posts/331/01.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span><figcaption>Jira API 토큰 발행&nbsp;</figcaption>
+</figure>
+</p>
+<p>다음으로 발행한 토큰으로 인증을 수행하고, <b>프로젝트 키</b>와 <b>reporter</b>, 멘션 기능으로 호출 될 <b>member</b>들을 설정해주도록 하겠습니다.</p>
+<pre id="code_1616142227183" class="python" data-ke-language="python" data-ke-type="codeblock"><code>from jira import JIRA
+
+
+class Jira:
+    def __init__(self):
+        self.options = {'server': 'https://xxx.atlassian.net'}
+        self.jira = JIRA(self.options, basic_auth=('&lt;로그인 할 유저 E-mail&gt;', '&lt;JIRA_TOKEN&gt;')
+        self.proj = 'ABC'  # 프로젝트 키
+        self.reporter = 'notification'  # reporter username
+        self.member = {
+            'notification': '&lt;사용자 ID&gt;'
+            'tomas': '&lt;사용자 ID&gt;'
+            'james': '&lt;사용자 ID&gt;'
+        }</code></pre>
+<p>예시에 사용자 ID를 입력하는 부분은 팀원들에게 Jira에 접속하여 알려달라고 할 수 있겠지만 팀원들의 소중한 시간을 뺏을 수 없기 때문에 아래 사진에 있는 사용자 탭으로 이동하여 추가하고자 하는 사용자를 클릭하여 들어간 뒤 URL의 끝 부분이 사용자 ID 입니다.</p>
+<p>ex) xxx.atlassian.net/jira/people/<span >600117beb66825010e0dblah</span></p>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/331/02.png" data-phocus="/assets/posts/331/02.png" data-alt="member의 사용자 ID를 얻고싶은 사용자를 클릭"><img src="/assets/posts/331/02.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span><figcaption>member의 사용자 ID를 얻고싶은 사용자를 클릭</figcaption>
+</figure>
+</p>
+<p>&nbsp;</p>
+<h2 data-ke-size="size26">2. Jira 이슈 생성 및 검색 구현</h2>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/331/03.png" data-phocus="/assets/posts/331/03.png" data-alt="이슈 생성 과정"><img src="/assets/posts/331/03.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span><figcaption>이슈 생성 과정</figcaption>
+</figure>
+</p>
+<pre id="code_1616146041636" class="python" data-ke-language="python" data-ke-type="codeblock"><code>from datetime import datetime
+from pytz import timezone
+import requests
+
+from jira import JIRA
+
+
+class Jira:
+    def __init__(self):
+        self.options = {'server': 'https://xxx.atlassian.net'}  # 사용중인 JIRA URL
+        self.jira = JIRA(self.options, basic_auth=('&lt;로그인 할 유저 E-mail&gt;', '&lt;JIRA_TOKEN&gt;')
+        self.proj = 'ABC'  # 프로젝트 키
+        self.reporter = 'notification'  # reporter username
+        self.member = {
+            'notification': '&lt;사용자 ID&gt;'
+            'tomas': '&lt;사용자 ID&gt;'
+            'james': '&lt;사용자 ID&gt;'
+        }
+    def create_issue_comment(self, error):
+        jira_issue = self._search_issue()
+        text = f"발생 시간-{datetime.now(timezone('Asia/Seoul'))} [~accountid:{self.admin['tomas']}] \n*{error}*"
+        
+        if not jira_issue:
+            jira_issue_form = {
+                'project': {'key': f"{self.proj}"},
+                'summary': '[긴급] 비정상 동작 감지 모니터링 필요 - AsyncError',
+                'description': text,
+                'issuetype': {'id': '10014'},  # 이슈 유형 - 버그
+            }
+            self.jira.create_issue(fields=jira_issue_form)
+        else:
+            for issue in jira_issue:
+                self.jira.add_comment(issue, text)
+        
+    def _search_issue(self):
+        search_issue_jql = f"summary~AsyncError and project={self.proj} and reporter={self.reporter} and status not in (closed, done)"
+        jira_issue = self.jira.search_issues(search_issue_jql)
+        
+        return jira_issue
+        
+        
+ if __name__ == '__main__':
+     jira = Jira()
+ 
+     a = "Hallo"
+     if a != "Hello":
+         error = "입력하신 문자열이 Hello와 같지 않습니다"
+         jira.create_issue_comment(error)
+     else:
+         print("Have a nice day")
+         
+         </code></pre>
+<p>create_issue_comment 함수는 이슈가 생성되어있지 않으면 이슈를 생성시키고, 이슈가 생성되어있다면 생성되어있는 이슈에 comment를 추가하는 로직입니다. 이 과정에서 이슈 생성 유무를 확인할 때 <b>_search_issue 함수에서 이슈가 있는지 검색하게 되는데 앞서 언급한 JQL 이라는 쿼리 언어를 사용하여 검색 할 조건을 설정</b>할 수 있습니다.&nbsp;</p>
+<pre id="code_1616238900678" class="python" data-ke-language="python" data-ke-type="codeblock"><code>"summary~AsyncError and project={self.proj} and reporter={self.reporter} and status not in (closed, done)"</code></pre>
+<p>summary 의 끝에 AsyncError가 포함되어 있으며 project는 'ABC' 프로젝트이고, reporter는 'notification' 마지막으로 status는 이슈의 상태를 의미하는데 닫혀있거나 끝낸 상태가 아닌 것들만 가져오는 쿼리입니다.&nbsp;</p>
+<pre id="code_1616238953674" class="python" data-ke-language="python" data-ke-type="codeblock"><code>"발생 시간-{datetime.now(timezone('Asia/Seoul'))} [~accountid:{self.admin['tomas']}] \n*{error}*"</code></pre>
+<p><b>create_issue_comment</b> <b>함수</b> 안에 text에 저장되는 문자열을 풀어 설명해보면 <b>[~accountid: {self.admin['tomas']] 는 tomas를 mention으로 언급</b>한다는 것이고, <b>Markdown을 지원하기 때문에 *{error}*는 error가 나오는 부분을 Bold 처리</b> 한 것 입니다. 이 외에도 색깔을 입히거나 테이블을 만들거나 텍스트 박스를 만드는 등등 여러가지 기능을 지원하고 있습니다.</p>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/331/04.png" data-phocus="/assets/posts/331/04.png" data-alt="JIRA mention"><img src="/assets/posts/331/04.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span><figcaption>JIRA mention</figcaption>
+</figure>
+</p>
+<p>마지막으로 jira_issue_form 안에 issuetype은 아래 첨부한 사진처럼 유형들이 있고, 유형마다 고유한 Key를 갖고 있어서 원하는 유형의 키를 입력해주시면 됩니다.</p>
+<p><figure class="imageblock alignCenter" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"><span data-url="/assets/posts/331/05.png" data-phocus="/assets/posts/331/05.png" data-alt="issuetype"><img src="/assets/posts/331/05.png" data-origin-width="0" data-origin-height="0" data-ke-mobilestyle="widthContent"/></span><figcaption>issuetype</figcaption>
+</figure>
+</p>
+<h2 data-ke-size="size26">마무리</h2>
+<p>오늘은 Python JIRA 라이브러리를 이용하여 이슈를 생성하는 방법에 대해 알아보았습니다. 프로젝트에서 임시로 사용하기 위해 만든 로직이기 때문에 에러 내용과 시간 담당자를 맨션하는 정도로 만들었습니다. 글을 작성하면서 이것저것 찾아보니 새로운 이슈가 등록 될 때 마다 comment를 작성하는 것이 아닌 이슈 본문에 테이블을 만들어놓고 ROW를 추가하는 방법도 괜찮아보이네요!</p>
+<p>&nbsp;</p>
+<p>피드백은 언제나 환영입니다. 감사합니다.</p>
+<h2 data-ke-size="size26">Reference</h2>
+<p>- [<a href="https://jira.readthedocs.io/en/master/examples.html#quickstart" target="_blank" rel="noopener">Python JIRA Document</a>]</p>
+<p>- [<a href="https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/" target="_blank" rel="noopener">JIRA REST API Document</a>]</p>
+<p>&nbsp;</p></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/331">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

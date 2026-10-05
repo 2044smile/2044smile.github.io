@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>[PostgreSQL] sorry, too many clients already 문제 해결 — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/373">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>[PostgreSQL] sorry, too many clients already 문제 해결</h1>
+  <div class="meta"><span class="cat">Backend</span> · 2023-02-23</div>
+  <article>
+<p data-ke-size="size16">안녕하세요.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><b><i>오늘은 PostgreSQL sorry, too many clients already 해결법에 대해 알아보겠습니다.</i></b></p>
+<p data-ke-size="size16">구현 사항은 docker-compose 로 web과 db를 배포해둔 상태입니다.</p>
+<p data-ke-size="size16">web 에서 apscheduler 로 특정시간마다 정보를 가져와 db에 저장하는 것을 진행하던 중 문제가 발생하였습니다.</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-filename="iShot_2023-02-23_20.44.14.png" data-origin-width="570" data-origin-height="595"><span data-url="/assets/posts/373/01.png" data-phocus="/assets/posts/373/01.png" data-alt="docker-compose postgresql error"><img src="/assets/posts/373/01.png" loading="lazy" width="570" height="595" data-filename="iShot_2023-02-23_20.44.14.png" data-origin-width="570" data-origin-height="595"/></span><figcaption>docker-compose postgresql error</figcaption>
+</figure>
+</p>
+<p data-ke-size="size16">문제는 sorry, too many clients already</p>
+<p data-ke-size="size16">한마디로 클라이언트 수가 초과했다는 것을 의미합니다.</p>
+<h4 data-ke-size="size20">1. docker-compose DB connection</h4>
+<pre id="code_1677152770841" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>docker-compose exec -it db /bin/bash
+apt-get update
+apt-get install vim</code></pre>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">docker-compose db 에 접속합니다.</p>
+<p data-ke-size="size16">그리고 vi var/lib/postgresql/data/postgresql.conf</p>
+<p data-ke-size="size16">max_connections = 300 으로 변경합니다.</p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-filename="postgresql_error.png" data-origin-width="659" data-origin-height="367"><span data-url="/assets/posts/373/02.png" data-phocus="/assets/posts/373/02.png"><img src="/assets/posts/373/02.png" loading="lazy" width="659" height="367" data-filename="postgresql_error.png" data-origin-width="659" data-origin-height="367"/></span></figure>
+</p>
+<h4 data-ke-size="size20">2. docker restart db</h4>
+<pre id="code_1677153216057" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>docker ps
+docker restart &lt;CONTAINER_ID&gt;</code></pre>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-filename="iShot_2023-02-23_20.54.36.png" data-origin-width="279" data-origin-height="161"><span data-url="/assets/posts/373/03.png" data-phocus="/assets/posts/373/03.png" data-alt="postgres"><img src="/assets/posts/373/03.png" loading="lazy" width="279" height="161" data-filename="iShot_2023-02-23_20.54.36.png" data-origin-width="279" data-origin-height="161"/></span><figcaption>postgres</figcaption>
+</figure>
+</p>
+<h4 data-ke-size="size20">3. max_connections 가 변경되었는지 확인</h4>
+<pre id="code_1677153368464" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>docker-compose exec -it db /bin/bash
+psql -U &lt;user&gt;
+show max_connections;</code></pre>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-filename="iShot_2023-02-23_20.57.41.png" data-origin-width="254" data-origin-height="141"><span data-url="/assets/posts/373/04.png" data-phocus="/assets/posts/373/04.png"><img src="/assets/posts/373/04.png" loading="lazy" width="254" height="141" data-filename="iShot_2023-02-23_20.57.41.png" data-origin-width="254" data-origin-height="141"/></span></figure>
+</p>
+<p data-ke-size="size16">감사합니다.</p></div>
+            
+
+
+
+
+
+
+
+
+
+<div data-tistory-react-app="NaverAd"></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/373">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>

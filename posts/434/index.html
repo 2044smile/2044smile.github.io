@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DeepStream란? with Gstreamer — 이창석</title>
+  <link rel="canonical" href="https://newbiecs.tistory.com/434">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #13161d; --border: #262c38; --text: #edebe3; --text-soft: #c9c7be;
+      --muted: #a3a8b0; --faint: #737a84; --accent: #4fd1c0; --chip: #1b1f29;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.85; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+    header .wrap { padding: 24px 22px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header a { color: var(--muted); }
+    h1 { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-size: 30px; line-height: 1.35; margin: 36px 0 10px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--faint); margin-bottom: 36px; }
+    .meta .cat { color: var(--accent); }
+    article { font-size: 16px; color: var(--text-soft); padding-bottom: 24px; }
+    article h2, article h3, article h4 { font-family: 'Sora', 'Noto Sans KR', sans-serif; color: var(--text); line-height: 1.4; margin: 40px 0 12px; }
+    article h2 { font-size: 24px; } article h3 { font-size: 20px; } article h4 { font-size: 17px; }
+    article p { margin: 14px 0; }
+    article img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--border); display: block; margin: 20px auto; }
+    article figure { margin: 20px 0; text-align: center; }
+    article figcaption { font-size: 13px; color: var(--faint); }
+    article pre { background: #0d1016; border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+    article code { font-family: 'IBM Plex Mono', monospace; }
+    article p code, article li code { background: var(--chip); border-radius: 5px; padding: 2px 7px; font-size: 13.5px; color: var(--accent); }
+    article pre code { background: none; padding: 0; color: var(--text-soft); }
+    article blockquote { margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }
+    article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }
+    article th, article td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+    article th { background: var(--chip); color: var(--text); }
+    article hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    article ul, article ol { padding-left: 24px; }
+    article li { margin: 6px 0; }
+    article span { color: inherit !important; }
+    .origin { margin: 48px 0 0; padding: 18px 22px; background: var(--chip); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--muted); }
+    footer { border-top: 1px solid var(--border); margin-top: 48px; }
+    footer .wrap { padding: 28px 22px 40px; font-size: 13px; color: var(--faint); }
+    footer a { color: var(--faint); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/posts/">← 글 목록</a>
+    <a href="/" style="font-family: 'IBM Plex Mono', monospace;">2044smile.github.io</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>DeepStream란? with Gstreamer</h1>
+  <div class="meta"><span class="cat">AI · Vision</span> · 2025-10-20</div>
+  <article>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="759" data-origin-height="213"><span data-url="/assets/posts/434/01.png" data-phocus="/assets/posts/434/01.png"><img src="/assets/posts/434/01.png" loading="lazy" width="759" height="213" data-origin-width="759" data-origin-height="213"/></span></figure>
+</p>
+<h2 data-ke-size="size26"><span >목차</span></h2>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span >Gstreamer란 무엇인가?</span></li>
+<li><span >DeepStream이란 무엇인가?</span></li>
+<li><span >Gstreamer와 DeepStream의 관계</span></li>
+</ol>
+<h2 data-ke-size="size26"><span >1. Gstreamer란 무엇인가?</span></h2>
+<h3 data-ke-size="size23"><span >Gstreamer 개요</span></h3>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span ><span ><b>Gstreamer는 스트리밍 미디어 애플리케이션을 만들기 위한 강력한 프레임워크</b></span><span style="letter-spacing: 0px;">이다.</span></span></li>
+</ul>
+<h3 data-ke-size="size23"><span >주요 특징</span></h3>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >다양한 포맷 지원: MP3, Ogg/Vorbis, MPEG-1/2, AVI, Quicktime 등</span></li>
+<li><span >유연한 파이프라인 구조: 플러그인 기반으로 자유롭게 조합 가능</span></li>
+<li><span >폭 넓은 활용: 오디오/비디오 스트리밍부터 복잡한 편집까지</span></li>
+<li><span >XML 기반 파이프라인 정의: 저장 및 재사용 가능</span></li>
+</ul>
+<h4 data-ke-size="size20"><span >사용하는 이유</span></h4>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span ><b>실시간 스트리밍</b></span>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span ><b><span >RTSP</span>, WebRTC 등 프로토콜 지원</b></span></li>
+<li><span >네트워크 스트리밍에 최적화</span></li>
+<li><span >낮은 레이턴시</span></li>
+</ol>
+</li>
+<li><span >파이프라인 아키텍처</span>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span >복잡한 미디어 처리를 모듈식으로 구성</span></li>
+<li><span >디코딩 -&gt; 처리 -&gt; 인코딩 -&gt; 전송을 효율적으로 연결</span></li>
+</ol>
+</li>
+<li><span ><b>하드웨어 가속</b></span>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span ><b>GPU 디코딩/인코딩 지원</b></span></li>
+<li><span >CPU 부하 감소</span></li>
+</ol>
+</li>
+<li><span >다양한 포맷/코덱 지원</span>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><span >수백 가지 플러그인</span></li>
+<li><span >복잡한 미디어 파이프라인&nbsp;</span></li>
+</ol>
+</li>
+</ol>
+<h3 data-ke-size="size23"><span >핵심 구성 요소</span></h3>
+<h4 data-ke-size="size20"><span >Element (엘리먼트)</span></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >모든 Gstreamer 애플리케이션의 기본 빌딩 블록입니다.</span></li>
+</ul>
+<h4 data-ke-size="size20"><span >Element의 3가지 유형</span></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >Source: 데이터를 읽어오는 입력부</span>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >예: filesrc(파일), v4l2src(카메라), rtspsrc(네트워크 스트림)</span></li>
+</ul>
+</li>
+<li><span >Filter: 데이터를 변환/처리</span>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >예: decodebin(자동 디코딩), videoconvert(색상 변환)</span></li>
+</ul>
+</li>
+<li><span >Sink: 데이터를 출력</span>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >예: autovideosink(화면 출력), filesink(파일 저장), fakesink(데이터 버림)</span></li>
+</ul>
+</li>
+</ul>
+<h4 data-ke-size="size20"><span >Pad(패드)</span></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >Element의 입출력 포트 역할</span></li>
+<li><span ><b>Source pad: 데이터를 내보내는 출력 포트</b></span></li>
+<li><span ><b>Sink pad: 데이터를 받아들이는 입력 포트</b></span></li>
+<li><span >Pad를 연결하여 데이터 흐름을 만듭니다</span></li>
+</ul>
+<h4 data-ke-size="size20"><span >Pipeline(파이프라인)</span></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >여러 Element들을 연결한 데이터 처리 흐름</span>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >ex) filesrc(읽기) -&gt; decoder -&gt; converter(변환) -&gt; sink(출력)</span></li>
+</ul>
+</li>
+</ul>
+<h2 data-ke-size="size26"><span >2. DeepStream이란 무엇인가?</span></h2>
+<h3 data-ke-size="size23"><span >DeepStream 개요</span></h3>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span ><span ><b>NVIDIA DeepStream SDK는 GPU 기반의 실시간 비디오 분석 플랫폼</b></span>입니다.</span></li>
+</ul>
+<h4 data-ke-size="size20"><span >핵심 특징</span></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >GPU 가속: NVIDIA GPU를 활용한 고성능 처리</span></li>
+<li><span >실시간 AI 추론: TensorRT 엔진 기반</span></li>
+<li><span >멀티 스트림 처리: 동시에 여러 비디오 스트림 분석 가능</span></li>
+<li><span >확장 가능: Gstreamer 플러그인 방식으로 유연한 확장</span></li>
+</ul>
+<h4 data-ke-size="size20"><span >DeepStream이 제공하는 주요 플러그인</span></h4>
+<table style="border-collapse: collapse; width: 100%; height: 147px;" border="1" data-ke-align="alignLeft">
+<tbody>
+<tr style="height: 21px;">
+<td style="width: 33.3333%; height: 21px;"><span ><b>플러그인</b></span></td>
+<td style="width: 33.3333%; height: 21px;"><span ><b>역할</b></span></td>
+<td style="width: 33.3333%; height: 21px;"><span ><b>특징</b></span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="width: 33.3333%; height: 21px;"><span ><b>nvv4l2decoder</b></span></td>
+<td style="width: 33.3333%; height: 21px;"><span >GPU 하드웨어 디코딩</span></td>
+<td style="width: 33.3333%; height: 21px;"><span >CPU 대비 10배 이상 빠름</span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="width: 33.3333%; height: 21px;"><span ><b>nvstreammux</b></span></td>
+<td style="width: 33.3333%; height: 21px;"><span >배치 처리</span></td>
+<td style="width: 33.3333%; height: 21px;"><span >여러 스트림을 하나로 묶어 효율적 처리</span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="width: 33.3333%; height: 21px;"><span ><b>nvinfer</b></span></td>
+<td style="width: 33.3333%; height: 21px;"><span >AI 추론 엔진</span></td>
+<td style="width: 33.3333%; height: 21px;"><span >TensorRT 기반, 다양한 모델 지원</span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="width: 33.3333%; height: 21px;"><span ><b>nvvideoconvert&nbsp;</b></span></td>
+<td style="width: 33.3333%; height: 21px;"><span >GPU 색상 변환</span></td>
+<td style="width: 33.3333%; height: 21px;"><span >빠른 포맷 변환</span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="width: 33.3333%; height: 21px;"><span ><b>nvdsosd</b></span></td>
+<td style="width: 33.3333%; height: 21px;"><span >화면 오버레이</span></td>
+<td style="width: 33.3333%; height: 21px;"><span >바운딩 박스, 텍스트 표시</span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="width: 33.3333%; height: 21px;"><span ><b>nvtracker</b></span></td>
+<td style="width: 33.3333%; height: 21px;"><span >객체 추적</span></td>
+<td style="width: 33.3333%; height: 21px;"><span >프레임 간 객체 ID 유지</span></td>
+</tr>
+</tbody>
+</table>
+<h4 data-ke-size="size20"><span >DeepStream의 성능</span></h4>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span >처리 속도: 단일 GPU에서 30개 이상의 HD 스트림 동시 처리 가능</span></li>
+<li><span >지연 시간: 30ms 이하의 낮은 레이턴시</span></li>
+<li><span ><b>효율성: GPU 메모리에서 제로 카피(데이터가 GPU메모리에만 존재)로 데이터 처리</b></span></li>
+</ul>
+<h2 data-ke-size="size26"><span >3. DeepStream 과 Gstreamer 의 결합 구조</span></h2>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="372" data-origin-height="517"><span data-url="/assets/posts/434/02.png" data-phocus="/assets/posts/434/02.png"><img src="/assets/posts/434/02.png" loading="lazy" width="372" height="517" data-origin-width="372" data-origin-height="517"/></span></figure>
+</p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><span ><b>NVIDIA DeepStream은 Gstreamer 위에 얹어진 확장 계층</b></span></li>
+<li><span ><b>DeepStream = Gstreamer + NVIDIA 전용 Plugin 세트</b></span></li>
+</ul>
+<h3 data-ke-size="size23"><span >파이프라인 구조 분석</span></h3>
+<h4 data-ke-size="size20"><span >1. 전체 파이프라인 개요</span></h4>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="591" data-origin-height="78"><span data-url="/assets/posts/434/03.png" data-phocus="/assets/posts/434/03.png"><img src="/assets/posts/434/03.png" loading="lazy" width="591" height="78" data-origin-width="591" data-origin-height="78"/></span></figure>
+</p>
+<h4 data-ke-size="size20"><span >2. 주요 엘리먼트 역할 정리</span></h4>
+<table style="border-collapse: collapse; width: 100%; height: 231px;" border="1" data-ke-align="alignLeft">
+<tbody>
+<tr style="height: 21px;">
+<td style="height: 21px;"><span ><b>엘리먼트</b></span></td>
+<td style="height: 21px;"><span ><b>역할</b></span></td>
+<td style="height: 21px;"><span ><b>비고</b></span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="height: 21px;"><span ><b>filesrc (Gstreamer)</b></span></td>
+<td style="height: 21px;"><span >영상 파일을 읽어옴</span></td>
+<td style="height: 21px;"><span >입력 Source</span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="height: 21px;"><span ><b>qtdemux <b>(Gstreamer)</b> </b></span></td>
+<td style="height: 21px;"><span >MP4, MOV 파일의 스트림 분리</span></td>
+<td style="height: 21px;"><span >비디오/오디오 트랙 분리</span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="height: 21px;"><span ><b>h264parse <b>(Gstreamer)</b> </b></span></td>
+<td style="height: 21px;"><span >비트스트림 구조 정리</span></td>
+<td style="height: 21px;"><span >H.264용 Parser</span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="height: 21px;"><span ><b>nvv4l2decoder (DeepStream)</b></span></td>
+<td style="height: 21px;"><span >GPU 기반 H.264 디코딩</span></td>
+<td style="height: 21px;"><span >CPU 부하 최소화</span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="height: 21px;"><span ><b>nvstreammux <b>(DeepStream)</b> </b></span></td>
+<td style="height: 21px;"><span >여러 입력을 배치 처리</span></td>
+<td style="height: 21px;"><span >필수 DeepStream 구성요소</span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="height: 21px;"><span ><b>nvinfer <b>(DeepStream)</b> </b></span></td>
+<td style="height: 21px;"><span >TensorRT 모델 로딩 후 추론</span></td>
+<td style="height: 21px;"><span >객체 검출 수행</span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="height: 21px;"><span ><b>nvvideoconvert <b>(DeepStream)</b> </b></span></td>
+<td style="height: 21px;"><span >색상공간/포맷 변환</span></td>
+<td style="height: 21px;"><span >RGBA 변환 등</span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="height: 21px;"><span ><b>nvdsosd <b>(DeepStream)</b> </b></span></td>
+<td style="height: 21px;"><span >바운딩박스 시각화</span></td>
+<td style="height: 21px;"><span >&ldquo;onscreen display&rdquo;</span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="height: 21px;"><span ><b>tee <b>(Gstreamer)</b> </b></span></td>
+<td style="height: 21px;"><span >파이프라인 분기</span></td>
+<td style="height: 21px;"><span >동시에 파일 저장 + 분석 가능</span></td>
+</tr>
+<tr style="height: 21px;">
+<td style="height: 21px;"><span ><b>multifilesink <b>(Gstreamer)</b></b></span></td>
+<td style="height: 21px;"><span >프레임 단위 이미지 저장</span></td>
+<td style="height: 21px;"><span >파일 출력용</span></td>
+</tr>
+</tbody>
+</table>
+<h4 data-ke-size="size20"><span >마무리</span></h4>
+<p data-ke-size="size16"><span >오늘은 NVIDIA DeepStream 과 Gstreamer 에 대해서 배워봤습니다.</span></p>
+<p data-ke-size="size16"><span >다음 게시글에서는 실시간 객체 검출을 구현해보겠습니다.</span></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16"><span >감사합니다.</span></p>
+<h4 data-ke-size="size20"><span >Reference</span></h4>
+<p data-ke-size="size16"><span ><a  href="https://github.com/GStreamer/gstreamer?tab=readme-ov-file" target="_blank" rel="noopener&nbsp;noreferrer">https://github.com/GStreamer/gstreamer?tab=readme-ov-file</a></span></p>
+<figure id="og_1760935588092" contenteditable="false" data-ke-type="opengraph" data-ke-align="alignCenter" data-og-type="object" data-og-title="GitHub - GStreamer/gstreamer: GStreamer open-source multimedia framework" data-og-description="GStreamer open-source multimedia framework. Contribute to GStreamer/gstreamer development by creating an account on GitHub." data-og-host="github.com" data-og-source-url="https://github.com/GStreamer/gstreamer?tab=readme-ov-file" data-og-url="https://github.com/GStreamer/gstreamer" data-og-image="https://blog.kakaocdn.net/dna/J2IUy/hyZLaVJA7S/AAAAAAAAAAAAAAAAAAAAAHpCrY3bRws5xSp0lYZNnVZQxr9C2XLNV7edS0tbyJg9/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=kXY6hRZV2hmbCJ8bTo7hQbrY4So%3D"><a href="https://github.com/GStreamer/gstreamer?tab=readme-ov-file" target="_blank" rel="noopener" data-source-url="https://github.com/GStreamer/gstreamer?tab=readme-ov-file">
+<div class="og-image" style="background-image: url('https://blog.kakaocdn.net/dna/J2IUy/hyZLaVJA7S/AAAAAAAAAAAAAAAAAAAAAHpCrY3bRws5xSp0lYZNnVZQxr9C2XLNV7edS0tbyJg9/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=kXY6hRZV2hmbCJ8bTo7hQbrY4So%3D');">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">GitHub - GStreamer/gstreamer: GStreamer open-source multimedia framework</p>
+<p class="og-desc" data-ke-size="size16">GStreamer open-source multimedia framework. Contribute to GStreamer/gstreamer development by creating an account on GitHub.</p>
+<p class="og-host" data-ke-size="size16">github.com</p>
+</div>
+</a></figure>
+<p data-ke-size="size16"><span ><a  href="https://studyingdever.tistory.com/1" target="_blank" rel="noopener&nbsp;noreferrer">https://studyingdever.tistory.com/1</a></span></p>
+<figure id="og_1760935616462" contenteditable="false" data-ke-type="opengraph" data-ke-align="alignCenter" data-og-type="article" data-og-title="I. GStreamer 소개 : 1장. GStreamer란 무엇인가?" data-og-description="I. GStreamer 소개GStreamer 소개 파트에서는 설명하는 기술에 관한 개괄을 알려줍니다. 1장. GStreamer란 무엇인가?GStreamer는 스트리밍 미디어 애플리케이션을 만들기 위한 프레임워크입니다. GStreamer의 " data-og-host="studyingdever.tistory.com" data-og-source-url="https://studyingdever.tistory.com/1" data-og-url="https://studyingdever.tistory.com/1" data-og-image="https://blog.kakaocdn.net/dna/V4bxc/hyZLi0uXig/AAAAAAAAAAAAAAAAAAAAAIdHbX3gNEbxx_HIRU7L4KbJoAZRvBNVt8QIMRCjCHfH/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=TME68mk7n6hlVvHrWISpOJfUfTI%3D"><a href="https://studyingdever.tistory.com/1" target="_blank" rel="noopener" data-source-url="https://studyingdever.tistory.com/1">
+<div class="og-image" style="background-image: url('https://blog.kakaocdn.net/dna/V4bxc/hyZLi0uXig/AAAAAAAAAAAAAAAAAAAAAIdHbX3gNEbxx_HIRU7L4KbJoAZRvBNVt8QIMRCjCHfH/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1793458799&allow_ip=&allow_referer=&signature=TME68mk7n6hlVvHrWISpOJfUfTI%3D');">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">I. GStreamer 소개 : 1장. GStreamer란 무엇인가?</p>
+<p class="og-desc" data-ke-size="size16">I. GStreamer 소개GStreamer 소개 파트에서는 설명하는 기술에 관한 개괄을 알려줍니다. 1장. GStreamer란 무엇인가?GStreamer는 스트리밍 미디어 애플리케이션을 만들기 위한 프레임워크입니다. GStreamer의</p>
+<p class="og-host" data-ke-size="size16">studyingdever.tistory.com</p>
+</div>
+</a></figure>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">&nbsp;</p></div>
+  </article>
+  <div class="origin">이 글은 제 티스토리 블로그에서 옮겨온 글입니다. <a href="https://newbiecs.tistory.com/434">원문 보기 →</a></div>
+</main>
+<footer>
+  <div class="wrap">© 2026 Lee Changseok · <a href="/">홈</a> · <a href="https://newbiecs.tistory.com/">티스토리</a></div>
+</footer>
+</body>
+</html>
