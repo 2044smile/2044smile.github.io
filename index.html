@@ -127,6 +127,16 @@
     .post .title { font-size: 15px; }
     .post[hidden] { display: none; }
 
+    .pager { display: flex; justify-content: center; gap: 6px; margin-top: 24px; }
+    .page-btn {
+      min-width: 32px; height: 32px; padding: 0 8px; cursor: pointer;
+      background: none; border: 1px solid var(--border); border-radius: 8px;
+      font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--muted);
+    }
+    .page-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
+    .page-btn.active { background: var(--accent); border-color: var(--accent); color: #0f231f; font-weight: 700; }
+    .page-btn:disabled { opacity: 0.35; cursor: default; }
+
     footer { border-top: 1px solid var(--border); }
     footer .wrap { padding-top: 32px; padding-bottom: 40px; font-size: 13px; color: var(--faint); }
     footer a { color: var(--faint); }
@@ -279,6 +289,7 @@
     </div>
 
     <div class="posts" id="recent-posts"></div>
+    <div class="pager" id="posts-pager"></div>
   </section>
 
   <section id="certs">
@@ -303,22 +314,36 @@
 
 <script>
   const LABEL = { ai: 'AI', devops: 'DevOps', backend: 'Backend' };
+  const PER_PAGE = 8;
   fetch('/posts.json').then(r => r.json()).then(all => {
     const box = document.getElementById('recent-posts');
-    const render = cat => {
-      const list = (cat === 'all' ? all : all.filter(p => p.tab === cat)).slice(0, 8);
-      box.innerHTML = list.map(p => `
+    const pager = document.getElementById('posts-pager');
+    let cat = 'all', page = 1;
+    const render = () => {
+      const list = cat === 'all' ? all : all.filter(p => p.tab === cat);
+      const pages = Math.max(1, Math.ceil(list.length / PER_PAGE));
+      page = Math.min(page, pages);
+      box.innerHTML = list.slice((page - 1) * PER_PAGE, page * PER_PAGE).map(p => `
         <a class="post" data-cat="${p.tab}" href="/posts/${p.id}/">
           <span class="cat cat-${p.tab}">${LABEL[p.tab]}</span>
           <span class="title">${p.title.replace(/</g, '&lt;')}</span>
         </a>`).join('');
+      pager.innerHTML = pages < 2 ? '' :
+        `<button class="page-btn" data-p="${page - 1}" ${page === 1 ? 'disabled' : ''}>‹</button>` +
+        Array.from({ length: pages }, (_, i) =>
+          `<button class="page-btn ${i + 1 === page ? 'active' : ''}" data-p="${i + 1}">${i + 1}</button>`
+        ).join('') +
+        `<button class="page-btn" data-p="${page + 1}" ${page === pages ? 'disabled' : ''}>›</button>`;
+      pager.querySelectorAll('.page-btn').forEach(b => b.addEventListener('click', () => {
+        page = parseInt(b.dataset.p); render();
+      }));
     };
-    render('all');
+    render();
     const tabs = document.querySelectorAll('.tab');
     tabs.forEach(tab => tab.addEventListener('click', () => {
       tabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
-      render(tab.dataset.cat);
+      cat = tab.dataset.cat; page = 1; render();
     }));
   });
 </script>
