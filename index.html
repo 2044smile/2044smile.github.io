@@ -93,7 +93,7 @@
     }
     .activity .head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
     .activity .name { font-size: 15px; font-weight: 500; }
-    .activity .period { font-size: 12px; color: var(--faint); }
+    .activity .period, .project .period { font-size: 12px; color: var(--faint); }
     .activity .desc { font-size: 14px; color: var(--muted); margin-top: 4px; }
     .activity .desc strong, .project .desc strong { color: var(--text-soft); font-weight: 500; }
     .desc .mono { font-size: 13px; }
@@ -199,6 +199,7 @@
       <div>
         <div class="head">
           <span class="name">STEPTH</span>
+          <span class="period mono">최근 커밋 2026.08</span>
         </div>
         <div class="desc">목표를 입력하면 AI가 추가 질문으로 맥락을 파악하고 맞춤 실행 플랜을 만들어주는 모바일 서비스. 테스터 대상 비공개 배포 중.</div>
         <div class="desc"><strong>Backend 전반</strong> — FastAPI · Firebase 인증(카카오/네이버) · FCM 푸시 · GCP(Cloud Run · Scheduler · Tasks) 알림 스케줄링</div>
@@ -211,6 +212,7 @@
       <div>
         <div class="head">
           <a class="name" href="https://github.com/2044smile/mmca-ticket-alert">mmca-ticket-alert</a>
+          <span class="period mono">최근 커밋 2026.04</span>
         </div>
         <div class="desc">국립현대미술관(MMCA) 예매 사이트의 잔여석을 주기적으로 확인하다가, 자리가 나면 텔레그램으로 즉시 알려주는 봇 — Python · Telegram Bot API</div>
         <div class="desc">잔여석 감지 → 텔레그램 알림 → 매진이던 데이미언 허스트전 예매 성공까지 실전 검증 완료</div>
@@ -222,6 +224,7 @@
       <div>
         <div class="head">
           <a class="name" href="https://github.com/2044smile/daum-cafe-mp4-crawler">daum-cafe-mp4-crawler</a>
+          <span class="period mono">최근 커밋 2025.12</span>
         </div>
         <div class="desc">카카오 계정으로 로그인해 다음 카페 게시판 전체를 페이지네이션으로 순회하고, 동영상이 있는 게시글만 골라 480p MP4를 자동 다운로드 — Python · Selenium Wire · webdriver-manager</div>
         <div class="desc"><strong>네트워크 캡처로 스트림 주소 추출</strong> — 영상 URL이 DOM에 없어, Selenium Wire 프록시로 <span class="mono">kamp.daum.net</span> 응답(gzip)을 가로채 streams에서 <span class="mono">name=480p · protocol=mp4</span>를 매칭. JSON 파싱이 실패하면 정규식으로 폴백</div>
@@ -233,6 +236,7 @@
       <div class="project">
         <div class="head">
           <a class="name" href="https://github.com/2044smile/shipment">shipment</a>
+          <span class="period mono">최근 커밋 2024.12</span>
         </div>
         <div class="desc">카카오 로그인부터 주문·배송까지 accounts · items · orders · deliveries 4개 도메인을 DRF ViewSet으로 구현한 배송 서비스 — Django 4.2 · DRF · SimpleJWT · drf-yasg(Swagger)</div>
         <div class="desc"><strong>비동기 배송 처리</strong> — 배송 출발 API가 Celery 태스크를 <span class="mono">countdown=60</span>으로 지연 예약하고, RabbitMQ 브로커를 거쳐 60초 뒤 상태가 접수 → 출발 → 도착으로 자동 전이. docker-compose로 django · rabbitmq · celery 3개 컨테이너 구성</div>
@@ -245,6 +249,7 @@
       <div>
         <div class="head">
           <a class="name" href="https://github.com/2044smile/korail-notifier">korail-notifier</a>
+          <span class="period mono">최근 커밋 2026.08</span>
         </div>
         <div class="desc">TAGO 공공데이터 열차정보에 korail2 실시간 좌석 상태를 결합해 보여주는 좌석 감시 웹 서비스. 순수 좌석/입석+좌석 조건 알림과 자동예약 모드 지원 — Python · FastAPI · PostgreSQL · Docker</div>
         <div class="desc">korail2 라이브러리를 포크해 좌석 감시 CLI를 추가 — 30초 간격으로 재조회하다가 빈자리가 나면 텔레그램으로 즉시 알림, 매진이던 KTX 좌석 확보까지 실전 검증 완료</div>
@@ -256,6 +261,7 @@
       <div>
         <div class="head">
           <a class="name" href="https://github.com/2044smile/DevelUP-quest1">songchu (송추 소개 페이지)</a>
+          <span class="period mono">최근 커밋 2022.07</span>
         </div>
         <div class="desc">"내 동네와 관련된 서비스" 주제로 동네 송추를 소개하는 반응형 웹을 프론트까지 혼자 구축. Naver Map·Disqus 연동 — Django · JavaScript</div>
         <div class="desc">AWS EC2 + uWSGI + Nginx로 실제 배포까지 직접 진행 · 개발 기록 <a href="https://newbiecs.tistory.com/218">1</a> · <a href="https://newbiecs.tistory.com/219">2</a> · <a href="https://newbiecs.tistory.com/220">3</a> · <a href="https://newbiecs.tistory.com/221">4</a></div>
