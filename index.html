@@ -163,6 +163,7 @@
   <div class="wrap">
     <nav>
       <a href="#about" class="hide-sm">소개</a>
+      <a href="#career">경력</a>
       <a href="#projects">프로젝트</a>
       <a href="#community" class="hide-sm">활동</a>
       <a href="#blog">블로그</a>
@@ -185,9 +186,60 @@
   <section id="skills">
     <h2>Skills</h2>
     <div class="skills">
-      <div class="row"><span class="label">BACKEND</span><span class="items">Python · Django · DRF · PostgreSQL · Poetry</span></div>
-      <div class="row"><span class="label">DEVOPS</span><span class="items">AWS · Kubernetes · Argo Workflow · Helm · Docker</span></div>
-      <div class="row"><span class="label">VISION AI</span><span class="items">DeepStream · GStreamer · CUDA · ONVIF · YOLOv8</span></div>
+      <div class="row"><span class="label">BACKEND</span><span class="items">Python · Django · DRF · FastAPI · PostgreSQL</span></div>
+      <div class="row"><span class="label">DEVOPS</span><span class="items">AWS · Kubernetes(K3s) · Helm · Rancher · Docker · Ansible</span></div>
+      <div class="row"><span class="label">CI/CD · MLOPS</span><span class="items">GitHub Actions · Argo Workflows · Argo Events · Prometheus · Grafana</span></div>
+      <div class="row"><span class="label">VISION AI</span><span class="items">DeepStream · Triton · TensorRT · GStreamer · CUDA · ONVIF</span></div>
+    </div>
+  </section>
+
+  <section id="career">
+    <h2>경력</h2>
+    <div class="alist">
+      <div class="activity">
+        <div>
+          <div class="head">
+            <span class="name">이노뎁 — Software Engineer</span>
+            <span class="period mono">2025.01 – 재직 중</span>
+          </div>
+          <div class="desc"><strong>PoC · BMT 현장 사업화 전담</strong> — 고객사 폐쇄망 환경 서비스 구축과 기술 검증, Ansible 기반 Ubuntu 24.04 자동화 검증 환경 구축, AI Agent를 활용한 로그·코드·설정 분석으로 장애 대응과 개발팀 협업 효율화</div>
+          <div class="desc"><strong>장애 원인 분석 · 스토리지 최적화</strong> — Linux · Docker · Kubernetes · GPU · 네트워크 · ONVIF 로그 기반 근본 원인 분석. IOPS가 중요한 Milvus · PostgreSQL은 SSD, 썸네일 등 정적 파일은 HDD로 분리하고 Swap을 64GB로 확장해 OOM 서버 다운 완충 장치 확보</div>
+          <div class="desc"><strong>Vision AI 파이프라인 운영</strong> — DeepStream 1차 분석 → Triton/CLIP 2차 검증 흐름의 현장 임계값 조정·트러블슈팅. 인파 관리 고도화를 위해 YOLOv5 · P2PNet · CLIP-EBC · CLTR을 직접 테스트하고 정확도·추론 성능·GPU 사용량 비교 분석</div>
+          <div class="desc"><strong>ONVIF 운영 자동화</strong> — 제조사별 차이를 고려한 Python 도구로 Codec · Resolution · FPS · Bitrate 자동 수집, 카메라 점검 시간 약 120배(1분 → 0.5초) 단축</div>
+        </div>
+      </div>
+      <div class="activity">
+        <div>
+          <div class="head">
+            <span class="name">서울대학교 인텔리시스 — 연구원 (Backend · DevOps/MLOps)</span>
+            <span class="period mono">2020.02 – 2022.08</span>
+          </div>
+          <div class="desc"><strong>롯데홈쇼핑 iToo 지능형 개인화 솔루션</strong> — Django · DRF 백엔드 API 개발과 Swagger 문서화. GitHub Actions · Docker · AWS ECR 기반 CI 파이프라인 설계, Helm 기반 Kubernetes(EKS) 배포 운영. Argo Workflows · Argo Events로 약 5시간 소요 배치 작업 자동화</div>
+          <div class="desc"><strong>Fitzme 패션 AI 코디 추천</strong> — MSA 구조 기반 어울림 분석 · 유사 상품 검색 · 실시간 코디 추천 API 개발, Django ORM 데이터 처리와 테스트 코드로 백엔드 안정성 강화</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="troubleshooting">
+    <h2>문제 해결 경험</h2>
+    <div class="plist">
+      <div class="project">
+        <div class="head"><span class="name">GPU 초기화 실패 진단</span></div>
+        <div class="desc">현장 서버 <span class="mono">nvidia-smi</span>의 "No devices were found" 에러를 <span class="mono">dmesg</span> 로그로 분석해 드라이버가 아닌 GPU 초기화(RmInitAdapter failed) 실패로 범위를 좁히고, 화면 아티팩트로 VRAM 불량을 진단 — 소프트웨어 디버깅 대신 신속한 하드웨어 교체 판단으로 복구 리드타임 최소화</div>
+      </div>
+      <div class="project">
+        <div class="head"><span class="name">폐쇄망 Docker 이미지 저장 공간 부족</span></div>
+        <div class="desc">용량 부족 시 Docker의 이미지 삭제 우선순위 메커니즘을 분석해 서비스 재기동 실패 원인을 파악. ChartMuseum 불필요 버전 정리와 USB <span class="mono">docker load</span> → Private Repository 업로드 방식으로 이미지 배포 과정을 재구축해 디스크 부족 상황에서도 안정적인 배포 환경 유지</div>
+      </div>
+      <div class="project">
+        <div class="head"><span class="name">K3s 인증서 만료 장애 복구</span></div>
+        <div class="desc">Rancher 앱 설치 실패와 워커 노드 NotReady 현상을 <span class="mono">journalctl -u k3s</span> 로그의 <span class="mono">x509: certificate has expired</span>로 K3s 인증서 만료가 근본 원인임을 특정 — 인증서 갱신과 K3s 재시작, kubeconfig 갱신으로 클러스터 정상화</div>
+      </div>
+      <div class="project">
+        <div class="head"><span class="name">ONVIF 기반 CCTV 점검 자동화</span></div>
+        <div class="desc">느린 네트워크 환경에서 다수 카메라의 FPS · Bitrate를 수작업 확인하던 비효율을 Python ONVIF 자동화 도구로 해소 — 대당 점검 시간을 약 1분에서 0.5초로 단축하고 결과를 CSV로 제공</div>
+      </div>
     </div>
   </section>
 
@@ -327,6 +379,20 @@
 
     <div class="posts" id="recent-posts"></div>
     <div class="pager" id="posts-pager"></div>
+  </section>
+
+  <section id="education">
+    <h2>학력</h2>
+    <div class="certs">
+      <div class="cert">
+        <span class="name">국가평생교육진흥원 — 컴퓨터공학과 (4년제)</span>
+        <span class="meta">2020.07 – 2022.06</span>
+      </div>
+      <div class="cert">
+        <span class="name">경복대학 — IT보안과 (2년제)</span>
+        <span class="meta">2014.03 – 2019.02</span>
+      </div>
+    </div>
   </section>
 
   <section id="certs">
