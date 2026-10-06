@@ -221,28 +221,6 @@
     </div>
   </section>
 
-  <section id="troubleshooting">
-    <h2>문제 해결 경험</h2>
-    <div class="plist">
-      <div class="project">
-        <div class="head"><span class="name">GPU 초기화 실패 진단</span></div>
-        <div class="desc">현장 서버 <span class="mono">nvidia-smi</span>의 "No devices were found" 에러를 <span class="mono">dmesg</span> 로그로 분석해 드라이버가 아닌 GPU 초기화(RmInitAdapter failed) 실패로 범위를 좁히고, 화면 아티팩트로 VRAM 불량을 진단 — 소프트웨어 디버깅 대신 신속한 하드웨어 교체 판단으로 복구 리드타임 최소화</div>
-      </div>
-      <div class="project">
-        <div class="head"><span class="name">폐쇄망 Docker 이미지 저장 공간 부족</span></div>
-        <div class="desc">용량 부족 시 Docker의 이미지 삭제 우선순위 메커니즘을 분석해 서비스 재기동 실패 원인을 파악. ChartMuseum 불필요 버전 정리와 USB <span class="mono">docker load</span> → Private Repository 업로드 방식으로 이미지 배포 과정을 재구축해 디스크 부족 상황에서도 안정적인 배포 환경 유지</div>
-      </div>
-      <div class="project">
-        <div class="head"><span class="name">K3s 인증서 만료 장애 복구</span></div>
-        <div class="desc">Rancher 앱 설치 실패와 워커 노드 NotReady 현상을 <span class="mono">journalctl -u k3s</span> 로그의 <span class="mono">x509: certificate has expired</span>로 K3s 인증서 만료가 근본 원인임을 특정 — 인증서 갱신과 K3s 재시작, kubeconfig 갱신으로 클러스터 정상화</div>
-      </div>
-      <div class="project">
-        <div class="head"><span class="name">ONVIF 기반 CCTV 점검 자동화</span></div>
-        <div class="desc">느린 네트워크 환경에서 다수 카메라의 FPS · Bitrate를 수작업 확인하던 비효율을 Python ONVIF 자동화 도구로 해소 — 대당 점검 시간을 약 1분에서 0.5초로 단축하고 결과를 CSV로 제공</div>
-      </div>
-    </div>
-  </section>
-
   <section id="projects">
     <h2>주요 프로젝트</h2>
 
