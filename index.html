@@ -213,7 +213,11 @@
           </div>
           <ul class="career-items">
             <li>전사 PoC/BMT 현장 사업화 전담 — 고객사 폐쇄망 환경 서비스 구축 및 기술 검증</li>
-            <li>VMS · MAM/MAS · VUCatcher · 건강도 체크를 하나로 묶은 통합 패키지 제작</li>
+            <li>VURIX(VMS) · MAM · VUCatcher(MAS) 현장 서버의 HW · SW · 운영 상태를 자동 수집해 74~85개 명세 항목을 채우는 현장 점검 도구 개발</li>
+            <li>폐쇄망 대응 설계 — Python embeddable 동봉 · zipapp 단일 파일 배포, 순수 파이썬 DB 드라이버(MariaDB · PostgreSQL), 대상 서버에 설치 없이 SSH로 병렬 수집</li>
+            <li>MAM DB에서 분석 서버 자동 발견 → SSH 수집 → Kafka 오프셋 · GPU 사용률로 건강도(평균 FPS · 일일 저장 용량 · GPU 온도) 측정 → 세 소스를 IP로 조인해 CSV 산출</li>
+            <li>CLI와 웹 UI(진행률 폴링 · 실행 중 재연결 · 중복 실행 방지)가 같은 파이프라인을 공유하고, 항목별 수집/미수집/해당없음 상태를 엄격히 구분</li>
+            <li class="outcome">→ 서버 IP 수기 입력 없이 현장 점검 결과를 백엔드 적재용 CSV로 일원화</li>
             <li>Ansible 기반 Ubuntu 24.04 자동화 검증 환경 구축, AI Agent 활용 로그·코드·설정 분석</li>
             <li>Linux · Docker · Kubernetes · GPU · 네트워크 · ONVIF 로그 기반 장애 근본 원인 분석</li>
             <li>Milvus · PostgreSQL은 SSD, 썸네일 등 정적 파일은 HDD로 분리하는 스토리지 구조 개선 및 Swap 64GB 확장</li>
