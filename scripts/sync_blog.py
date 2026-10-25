@@ -77,6 +77,8 @@ TEMPLATE = """<!doctype html>
     article pre code {{ background: none; padding: 0; color: var(--text-soft); }}
     article blockquote {{ margin: 20px 0; padding: 4px 20px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 10px 10px 0; color: var(--muted); }}
     article table {{ border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; display: block; overflow-x: auto; }}
+    article table[style] {{ height: auto !important; }}
+    article table > tbody {{ display: table; width: 100%; border-collapse: collapse; }}
     article th, article td {{ border: 1px solid var(--border); padding: 9px 13px; text-align: left; }}
     article th {{ background: var(--chip); color: var(--text); }}
     article hr {{ border: none; border-top: 1px solid var(--border); margin: 36px 0; }}
