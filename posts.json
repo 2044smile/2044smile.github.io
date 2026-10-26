@@ -189,13 +189,13 @@
   "id": 326,
   "title": "주니어 개발자의 Argo Workflow, Events 사용기 - 2",
   "date": "2021-02-07",
-  "tab": "devops"
+  "tab": "mlops"
  },
  {
   "id": 324,
   "title": "Argo Workflow 란 무엇인가? - 1",
   "date": "2021-01-09",
-  "tab": "devops"
+  "tab": "mlops"
  },
  {
   "id": 323,
@@ -214,6 +214,12 @@
   "title": "[Django Rest Framework] ModelViewset 동작에 대해 (queryset, get_object)",
   "date": "2020-08-20",
   "tab": "backend"
+ },
+ {
+  "id": 306,
+  "title": "Argo Workflow failed to save outputs: Failed to establish pod watch: unknown (get pods) Error",
+  "date": "2020-07-23",
+  "tab": "mlops"
  },
  {
   "id": 280,

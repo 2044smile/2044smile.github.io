@@ -22,7 +22,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 BLOG = "https://newbiecs.tistory.com"
 
 # 큐레이션: 포트폴리오에 싣는 글 (id: 탭 분류)
-# 탭: ai = AI · Vision, devops = DevOps, backend = Backend
+# 탭: ai = AI · Vision, devops = DevOps, mlops = MLOps, backend = Backend
 POST_IDS = {
     # AI · Vision
     442: "ai", 441: "ai", 440: "ai", 438: "ai", 435: "ai", 434: "ai", 430: "ai",
@@ -30,14 +30,16 @@ POST_IDS = {
     443: "devops", 437: "devops", 433: "devops", 432: "devops", 423: "devops",
     417: "devops", 416: "devops", 411: "devops", 414: "devops", 415: "devops",
     362: "devops", 361: "devops", 360: "devops", 359: "devops",
-    357: "devops", 330: "devops", 326: "devops", 324: "devops", 322: "devops", 280: "devops",
+    357: "devops", 330: "devops", 322: "devops", 280: "devops",
+    # MLOps · Argo Workflows
+    326: "mlops", 324: "mlops", 306: "mlops",
     # Backend · Python/Django
     436: "backend", 431: "backend", 427: "backend", 373: "backend", 363: "backend",
     353: "backend", 332: "backend", 331: "backend", 323: "backend", 316: "backend",
     271: "backend", 267: "backend", 266: "backend", 262: "backend",
 }
 
-TAB_LABEL = {"ai": "AI · Vision", "devops": "DevOps", "backend": "Backend"}
+TAB_LABEL = {"ai": "AI · Vision", "devops": "DevOps", "mlops": "MLOps", "backend": "Backend"}
 
 TEMPLATE = """<!doctype html>
 <html lang="ko">
