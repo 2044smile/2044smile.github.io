@@ -132,6 +132,7 @@
     }
     .cat-ai { color: var(--accent); }
     .cat-devops { color: var(--blue); }
+    .cat-mlops { color: var(--green); }
     .cat-backend { color: var(--amber); }
     .post .title { font-size: 15px; }
     .post[hidden] { display: none; }
@@ -388,6 +389,7 @@
       <button class="tab active" data-cat="all">전체</button>
       <button class="tab" data-cat="ai">AI · Vision</button>
       <button class="tab" data-cat="devops">DevOps</button>
+      <button class="tab" data-cat="mlops">MLOps</button>
       <button class="tab" data-cat="backend">Backend</button>
     </div>
 
@@ -447,7 +449,7 @@
 </footer>
 
 <script>
-  const LABEL = { ai: 'AI', devops: 'DevOps', backend: 'Backend' };
+  const LABEL = { ai: 'AI', devops: 'DevOps', mlops: 'MLOps', backend: 'Backend' };
   const PER_PAGE = 8;
   fetch('/posts.json').then(r => r.json()).then(all => {
     const box = document.getElementById('recent-posts');
